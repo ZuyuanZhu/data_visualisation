@@ -185,8 +185,9 @@ class Visualise(object):
         picker_utilisation_mean = picker_utilisation_mean.tolist()
         picker_utilisation_mean_median = [picker_utilisation_mean[0] for x in range(len(picker_utilisation_mean))]
 
-        x_axis = [x for x in range(1, n_pickers + 2)]
-        labels = ['%d' % x for x in range(n_pickers + 1)]
+        n_robots = self.plot_d["n_robots"]
+        labels = [str(i) for i in n_robots]
+        x_axis = [i+1 for i in n_robots]
 
         color = 'tab:olive'
         self.ax1.set_xlabel('Number of robots', fontdict=self.font)
@@ -234,3 +235,11 @@ class Visualise(object):
         self.fig1.savefig(self.data_path + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage + '_'
                           '_process_completion_time_and_picker_utilisation.eps',
                           format='eps')
+
+    def plot_waiting_time(self):
+        """
+        Plot the waiting time of pickers and robots over n_robots
+        :return:
+        """
+        # TODO
+        pass
