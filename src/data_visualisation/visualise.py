@@ -26,12 +26,15 @@ class Visualise(object):
     A class to visualise the results of picking and transporting tasks by pickers and robots in rasberry_des
     """
 
-    def __init__(self, data_path, file_type, n_iteration, policy):
+    def __init__(self, data_path, file_type, n_iteration):
         self.data_path = data_path
         self.plot_data = None
         self.n_iteration = n_iteration
-        self.policy = policy   # "uniform_utilisation", "lexicographical", "shortest_distance"
+        self.policy = None   # "uniform_utilisation", "lexicographical", "shortest_distance"
         self.policies = ["uniform_utilisation", "lexicographical", "shortest_distance"]
+        self.use_cold_storage = None
+        self.cold_storage = None
+        self.map_name = None
 
         self.fig_name_base = data_path
 
@@ -88,6 +91,9 @@ class Visualise(object):
 
         for env in event_data:
             counter += 1
+            self.map_name = env["env_details"]["map_name"]
+            self.use_cold_storage = env["sim_details"]["use_cold_storage"]
+
             self.plot_d["n_pickers"] = env["sim_details"]["n_pickers"]
 
             sim_finish_time_simpy.append(env["sim_details"]["sim_finish_time_simpy"])
@@ -116,6 +122,11 @@ class Visualise(object):
                 robot_total_working_time_array = []
                 self.plot_data.append(self.plot_d)
 
+        if self.use_cold_storage:
+            self.cold_storage = 'use_cold_storage'
+        else:
+            self.cold_storage = 'no_cold_storage'
+
     def init_plot(self):
         self.get_folder_files(self.data_path)
         self.load_data(self.data_path, self.entries_list, self.file_type)
@@ -140,16 +151,17 @@ class Visualise(object):
         robot_utilisation = 100 * np.divide(robot_total_working_times_array, total_time_array)
 
         x_axis = n_robots
-        x_axis = ''.join([str(e) for e in x_axis])  # TODO
         color = 'tab:olive'
         self.ax2.set_xlabel('Number of robots', fontdict=self.font)
         self.ax2.set_ylabel('Robot utilisation (%)', fontdict=self.font)
         boxplot = self.ax2.boxplot(robot_utilisation,
                                    vert=True,  # vertical box alignment
-                                   patch_artist=False)  # will be used to label x-ticks
+                                   patch_artist=False,
+                                   labels=x_axis)  # will be used to label x-ticks
         self.ax2.tick_params(axis='y', labelcolor=color)
         self.fig2.tight_layout()
-        self.fig2.savefig(self.data_path + '_' + self.policy + '_robot_utilisation.eps', format='eps')
+        self.fig2.savefig(self.data_path + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage + '_'
+                          + '_robot_utilisation.eps', format='eps')
 
     def plot_picker_utilisation(self):
         """
@@ -193,7 +205,7 @@ class Visualise(object):
         ax2 = self.ax1.twinx()
 
         color = 'tab:blue'
-        ax2.set_ylabel('Picker utilisation (%)')  # we already handled the x-label with ax1
+        ax2.set_ylabel('Picker utilisation (%)', fontdict=self.font)  # we already handled the x-label with ax1
         boxplot2 = ax2.boxplot(picker_utilisation,
                                vert=True,  # vertical box alignment
                                patch_artist=False,  # fill with color
@@ -219,6 +231,6 @@ class Visualise(object):
 
         self.fig1.legend(loc='upper right')  # loc='upper right'
 
-        self.fig1.savefig(self.data_path + '_' + self.policy +
+        self.fig1.savefig(self.data_path + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage + '_'
                           '_process_completion_time_and_picker_utilisation.eps',
                           format='eps')
