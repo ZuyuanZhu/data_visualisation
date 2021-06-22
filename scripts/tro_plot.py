@@ -10,12 +10,12 @@
 import data_visualisation.visualise
 
 
-N_ITERATION = 3
+N_ITERATION = 10
 
 
 if __name__ == "__main__":
 
-    folder = "2021_May_21_09_52_15"
+    folder = "2021_May_21_11_06_58"
     data_folder_path = "/home/zuyuan/des_logs/"
     data_path = data_folder_path + folder
     file_type = 'yaml'
