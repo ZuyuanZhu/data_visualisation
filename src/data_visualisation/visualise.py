@@ -55,6 +55,8 @@ class Visualise(object):
         self.finish_time_array = []
 
         self.font = {'family': 'serif', 'color': 'black', 'weight': 'bold', 'size': 24}
+        self.font_over_bar = {'family': 'serif', 'color': 'olive', 'size': 24}
+        self.linewidth = 5
         self.fig1, self.ax1 = plt.subplots(nrows=1, ncols=1, figsize=(18, 18))
         self.fig2, self.ax2 = plt.subplots(nrows=1, ncols=1, figsize=(18, 18))
         if n_iteration < 10:
@@ -174,7 +176,7 @@ class Visualise(object):
                                    vert=True,  # vertical box alignment
                                    patch_artist=False,
                                    labels=x_axis)  # will be used to label x-ticks
-        self.ax2.plot(x_axis_mean, robot_utilisation_mean, linestyle='-.', color=color, linewidth=3)
+        self.ax2.plot(x_axis_mean, robot_utilisation_mean, linestyle='-.', color=color, linewidth=self.linewidth)
         self.ax2.tick_params(axis='y', labelcolor=color, labelsize=24)
         self.ax2.tick_params(axis='x', labelsize=24)
         self.fig2.tight_layout()
@@ -225,7 +227,7 @@ class Visualise(object):
         # show bar value
         for i in range(len(x_axis)):
             finish_time = '%.1f' % finish_time_array_mean[i]
-            plt.text(i+1, finish_time_array_mean[i], finish_time, fontdict={'color': 'olive'}, ha='center', va='bottom')
+            plt.text(i+1, finish_time_array_mean[i], finish_time, fontdict=self.font_over_bar, ha='center', va='bottom')
 
         # ### Picker waiting for robot time ###
         color = 'tab:gray'
@@ -236,7 +238,7 @@ class Visualise(object):
             plt.text(i+1,
                      picker_wait_for_robot_time_array_mean_trials[i],
                      wait_time,
-                     fontdict={'color': 'gray'}, ha='center', va='bottom')
+                     fontdict=self.font_over_bar, ha='center', va='bottom')
         # self.ax3.boxplot(picker_wait_for_robot_time_array_mean,
         #                  vert=True,
         #                  patch_artist=True,
@@ -255,7 +257,7 @@ class Visualise(object):
                                  vert=True,  # vertical box alignment
                                  patch_artist=False,  # fill with color
                                  labels=labels)  # will be used to label x-ticks
-        ax3_2.plot(x_axis, picker_wait_rate_mean, linestyle='-.', label='Picker waiting rate (%)', color=color, linewidth=3)
+        ax3_2.plot(x_axis, picker_wait_rate_mean, linestyle='-.', label='Picker waiting rate (%)', color=color, linewidth=self.linewidth)
         # m = picker_wait_rate_mean_median[0]
 
         ax3_2.tick_params(axis='y', labelcolor=color, labelsize=24)
@@ -310,7 +312,7 @@ class Visualise(object):
                                     vert=True,  # vertical box alignment
                                     patch_artist=True,  # fill with color
                                     labels=labels)  # will be used to label x-ticks
-        self.ax1.plot(x_axis, finish_time_array_mean, linestyle=':', color=color, linewidth=3)
+        self.ax1.plot(x_axis, finish_time_array_mean, linestyle=':', color=color, linewidth=self.linewidth)
         self.ax1.plot(x_axis, finish_time_array_mean_median,
                       label='Median completion time, no robots (%.1f s)' % finish_time_array_mean_median[0],
                       color=color)
@@ -326,7 +328,7 @@ class Visualise(object):
                                vert=True,  # vertical box alignment
                                patch_artist=False,  # fill with color
                                labels=labels)  # will be used to label x-ticks
-        ax2.plot(x_axis, picker_utilisation_mean, linestyle='-.', color=color, linewidth=3)
+        ax2.plot(x_axis, picker_utilisation_mean, linestyle='-.', color=color, linewidth=self.linewidth)
         m = picker_utilisation_mean_median[0]
         ax2.plot(x_axis, picker_utilisation_mean_median,
                  label=('Median picker utilisation, no robots (%.1f ' % m) + '%)',
@@ -350,11 +352,3 @@ class Visualise(object):
         self.fig1.savefig(self.data_path + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage + '_'
                           '_process_completion_time_and_picker_utilisation.eps',
                           format='eps')
-
-    def plot_waiting_time(self):
-        """
-        Plot the waiting time of pickers and robots over n_robots
-        :return:
-        """
-        # TODO
-        pass
