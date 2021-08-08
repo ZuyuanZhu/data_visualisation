@@ -224,21 +224,24 @@ class Visualise(object):
         #                             labels=labels)  # will be used to label x-ticks
         # self.ax3.plot(x_axis, finish_time_array_mean, linestyle=':', label='Process completion time (s)', color=color_c)
         self.ax3.bar(x_axis, finish_time_array_mean, label='Process completion time (s)', color=color_c)
-        # show bar value
-        for i in range(len(x_axis)):
-            finish_time = '%.1f' % finish_time_array_mean[i]
-            plt.text(i+1, finish_time_array_mean[i], finish_time, fontdict=self.font_over_bar, ha='center', va='bottom')
+        # show bar value only when total robot number smaller than 11
+        if len(x_axis) < 11:
+            for i in range(len(x_axis)):
+                finish_time = '%.1f' % finish_time_array_mean[i]
+                plt.text(i+1, finish_time_array_mean[i], finish_time, fontdict=self.font_over_bar, ha='center', va='bottom')
 
         # ### Picker waiting for robot time ###
         color = 'tab:gray'
         self.ax3.bar(x_axis, picker_wait_for_robot_time_array_mean_trials, label='Picker waiting for robot time (s)', color=color)
-        # show bar value
-        for i in range(len(x_axis)):
-            wait_time = '%.1f' % picker_wait_for_robot_time_array_mean_trials[i]
-            plt.text(i+1,
-                     picker_wait_for_robot_time_array_mean_trials[i],
-                     wait_time,
-                     fontdict=self.font_over_bar, ha='center', va='bottom')
+        # show bar value only when total robot number smaller than 11
+        if len(x_axis) < 11:
+            for i in range(len(x_axis)):
+                wait_time = '%.1f' % picker_wait_for_robot_time_array_mean_trials[i]
+                plt.text(i+1,
+                         picker_wait_for_robot_time_array_mean_trials[i],
+                         wait_time,
+                         fontdict=self.font_over_bar, ha='center', va='bottom')
+
         # self.ax3.boxplot(picker_wait_for_robot_time_array_mean,
         #                  vert=True,
         #                  patch_artist=True,
