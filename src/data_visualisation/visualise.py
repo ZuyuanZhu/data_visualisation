@@ -49,20 +49,24 @@ class Visualise(object):
                        "picker_total_working_times_array": [],
                        "picker_wait_for_robot_time_array": [],
                        "robot_total_working_times_array": [],
+                       "robot_00_total_working_times_array": [],
                        "n_robots": []
                        }
         self.plot_data = []
         self.finish_time_array = []
+        self.finish_time_array_with_robots = []
 
-        self.font = {'family': 'serif', 'color': 'black', 'weight': 'bold', 'size': 24}
-        self.font_over_bar = {'family': 'serif', 'color': 'olive', 'size': 24}
-        self.linewidth = 5
-        self.fig1, self.ax1 = plt.subplots(nrows=1, ncols=1, figsize=(18, 18))
-        self.fig2, self.ax2 = plt.subplots(nrows=1, ncols=1, figsize=(18, 18))
+        self.font = {'family': 'serif', 'color': 'black', 'weight': 'bold', 'size': 14}
+        self.font_over_bar = {'family': 'serif', 'color': 'olive', 'size': 14}
+        self.label_size = 14
+        self.legend_size = 14
+        self.linewidth = 4
+        self.fig1, self.ax1 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
+        self.fig2, self.ax2 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
         if n_iteration < 10:
-            self.fig3, self.ax3 = plt.subplots(nrows=1, ncols=1, figsize=(18, 9))
+            self.fig3, self.ax3 = plt.subplots(nrows=1, ncols=1, figsize=(12, 6))
         else:
-            self.fig3, self.ax3 = plt.subplots(nrows=1, ncols=1, figsize=(18, 18))
+            self.fig3, self.ax3 = plt.subplots(nrows=1, ncols=1, figsize=(12, 6))
 
         self.init_plot()
 
@@ -94,6 +98,7 @@ class Visualise(object):
         picker_total_working_times_array = []
         picker_wait_for_robot_time_array = []
         robot_total_working_time_array = []
+        robot_00_total_working_times_array = []
 
         for env in event_data:
             counter += 1
@@ -116,8 +121,13 @@ class Visualise(object):
             if env["sim_details"]["robot_states"] is not None:
                 for robot in env["sim_details"]["robot_states"]:
                     robot_total_working_time += robot["total_working_time"]
+
+                    # get robot_00 working time
+                    if robot['robot_id'] == 'robot_00':
+                        robot_00_total_working_times_array.append(robot["total_working_time"])
             else:
                 robot_total_working_time = 0
+                # robot_00_total_working_time_array.append(0.0)
             robot_total_working_time_array.append(robot_total_working_time)
 
             if counter % n_iteration == 0:
@@ -126,11 +136,14 @@ class Visualise(object):
                 self.plot_d["picker_wait_for_robot_time_array"].append(picker_wait_for_robot_time_array)
                 self.plot_d["robot_total_working_times_array"].append(robot_total_working_time_array)
                 self.plot_d["n_robots"].append(env["sim_details"]["n_robots"])
+                if counter / n_iteration > 1:
+                    self.plot_d["robot_00_total_working_times_array"].append(robot_00_total_working_times_array)
 
                 sim_finish_time_simpy = []
                 picker_total_working_times_array = []
                 picker_wait_for_robot_time_array = []
                 robot_total_working_time_array = []
+                robot_00_total_working_times_array = []
                 self.plot_data.append(self.plot_d)
 
         if self.use_cold_storage:
@@ -150,7 +163,10 @@ class Visualise(object):
         self.plot_picker_wait_time()
 
         # Robot utilisation
-        self.plot_robot_utilisation()
+        # self.plot_robot_utilisation()
+
+        # robot_00 utilisation
+        self.plot_robot_00_utilisation()
 
     def plot_robot_utilisation(self):
         """
@@ -177,8 +193,39 @@ class Visualise(object):
                                    patch_artist=False,
                                    labels=x_axis)  # will be used to label x-ticks
         self.ax2.plot(x_axis_mean, robot_utilisation_mean, linestyle='-.', color=color, linewidth=self.linewidth)
-        self.ax2.tick_params(axis='y', labelcolor=color, labelsize=24)
-        self.ax2.tick_params(axis='x', labelsize=24)
+        self.ax2.tick_params(axis='y', labelcolor=color, labelsize=self.label_size)
+        self.ax2.tick_params(axis='x', labelsize=self.label_size)
+        self.fig2.tight_layout()
+        self.fig2.savefig(self.data_path + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage + '_'
+                          + '_robot_utilisation.eps', format='eps')
+
+    def plot_robot_00_utilisation(self):
+        """
+        Robot utilisation only for robot_00
+        :return: None
+        """
+        robot_00_total_working_times_array = np.array((self.plot_d["robot_00_total_working_times_array"]))
+        robot_00_total_working_times_array = np.rot90(robot_00_total_working_times_array)
+        n_robots = self.plot_d["n_robots"]
+        # total_time_array = self.finish_time_array_with_robots * n_robots[1:]
+        # total_time_array[:, 0] = [0.01 for n in range(self.n_iteration)]
+        robot_00_utilisation = 100 * np.divide(robot_00_total_working_times_array, self.finish_time_array_with_robots)
+        robot_00_utilisation_mean = np.mean(robot_00_utilisation, axis=0)
+        robot_00_utilisation_mean = robot_00_utilisation_mean.tolist()
+
+        x_axis_mean = [i for i in n_robots[1:]]
+        x_axis = n_robots[1:]
+        color = 'tab:olive'
+        self.ax2.set_xlabel('Number of robots', fontdict=self.font)
+        self.ax2.set_ylabel('Robot utilisation (%)', fontdict=self.font)
+
+        boxplot = self.ax2.boxplot(robot_00_utilisation,
+                                   vert=True,  # vertical box alignment
+                                   patch_artist=False,
+                                   labels=x_axis)  # will be used to label x-ticks
+        self.ax2.plot(x_axis_mean, robot_00_utilisation_mean, linestyle='-.', color=color, linewidth=self.linewidth)
+        self.ax2.tick_params(axis='y', labelcolor=color, labelsize=self.label_size)
+        self.ax2.tick_params(axis='x', labelsize=self.label_size)
         self.fig2.tight_layout()
         self.fig2.savefig(self.data_path + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage + '_'
                           + '_robot_utilisation.eps', format='eps')
@@ -191,6 +238,11 @@ class Visualise(object):
         finish_time_array = np.array(self.plot_d["sim_finish_time_simpy"])
         finish_time_array = np.rot90(finish_time_array)
         self.finish_time_array = finish_time_array
+
+        # ignore n_robots == 0
+        finish_time_array_with_robots = np.array(self.plot_d["sim_finish_time_simpy"][1:])
+        finish_time_array_with_robots = np.rot90(finish_time_array_with_robots)
+        self.finish_time_array_with_robots = finish_time_array_with_robots
 
         finish_time_array_mean = np.mean(finish_time_array, axis=0)
         finish_time_array_mean = finish_time_array_mean.tolist()
@@ -248,8 +300,8 @@ class Visualise(object):
         #                  labels=labels)
         # self.ax3.plot(x_axis, picker_wait_for_robot_time_array_mean_trials, linestyle='--', label='Picker waiting for robot time (s)', color=color)
 
-        self.ax3.tick_params(axis='y', labelcolor=color_c, labelsize=24)
-        self.ax3.tick_params(axis='x', labelsize=24)
+        self.ax3.tick_params(axis='y', labelcolor=color_c, labelsize=self.label_size)
+        self.ax3.tick_params(axis='x', labelsize=self.label_size)
 
         # ### Picker waiting rate   ###
         ax3_2 = self.ax3.twinx()
@@ -263,7 +315,7 @@ class Visualise(object):
         ax3_2.plot(x_axis, picker_wait_rate_mean, linestyle='-.', label='Picker waiting rate (%)', color=color, linewidth=self.linewidth)
         # m = picker_wait_rate_mean_median[0]
 
-        ax3_2.tick_params(axis='y', labelcolor=color, labelsize=24)
+        ax3_2.tick_params(axis='y', labelcolor=color, labelsize=self.label_size)
 
         # fill with colors
         colors1 = ['lightblue']
@@ -276,7 +328,7 @@ class Visualise(object):
         self.fig3.tight_layout()  # otherwise the right y-label is slightly clipped
         # plt.show()
 
-        self.fig3.legend(loc='upper right', prop={'size': 24})  # loc='upper right'
+        self.fig3.legend(loc='upper right', prop={'size': self.legend_size})  # loc='upper right'
 
         self.fig3.savefig(self.data_path + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage + '_'
                           '_process_completion_time_and_picker_wait_rate.eps',
@@ -319,8 +371,8 @@ class Visualise(object):
         self.ax1.plot(x_axis, finish_time_array_mean_median,
                       label='Median completion time, no robots (%.1f s)' % finish_time_array_mean_median[0],
                       color=color)
-        self.ax1.tick_params(axis='y', labelcolor=color, labelsize=24)
-        self.ax1.tick_params(axis='x', labelsize=24)
+        self.ax1.tick_params(axis='y', labelcolor=color, labelsize=self.label_size)
+        self.ax1.tick_params(axis='x', labelsize=self.label_size)
         # ax1.set_title('Process completion time and picker utilisation')
 
         ax2 = self.ax1.twinx()
@@ -336,7 +388,7 @@ class Visualise(object):
         ax2.plot(x_axis, picker_utilisation_mean_median,
                  label=('Median picker utilisation, no robots (%.1f ' % m) + '%)',
                  color=color)
-        ax2.tick_params(axis='y', labelcolor=color, labelsize=24)
+        ax2.tick_params(axis='y', labelcolor=color, labelsize=self.label_size)
 
         # fill with colors
         colors1 = ['lightblue']
@@ -350,7 +402,7 @@ class Visualise(object):
         self.fig1.tight_layout()  # otherwise the right y-label is slightly clipped
         # plt.show()
 
-        self.fig1.legend(loc='upper right', prop={'size': 24})  # loc='upper right'
+        self.fig1.legend(loc='upper right', prop={'size': self.legend_size})  # loc='upper right'
 
         self.fig1.savefig(self.data_path + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage + '_'
                           '_process_completion_time_and_picker_utilisation.eps',
