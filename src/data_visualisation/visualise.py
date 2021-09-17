@@ -61,7 +61,7 @@ class Visualise(object):
         self.label_size = 14
         self.legend_size = 14
         self.linewidth = 4
-        self.fig1, self.ax1 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
+        self.fig1, self.ax1 = plt.subplots(nrows=1, ncols=1, figsize=(12, 9))
         self.fig2, self.ax2 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
         if n_iteration < 10:
             self.fig3, self.ax3 = plt.subplots(nrows=1, ncols=1, figsize=(12, 6))
@@ -228,7 +228,7 @@ class Visualise(object):
         self.ax2.tick_params(axis='x', labelsize=self.label_size)
         self.fig2.tight_layout()
         self.fig2.savefig(self.data_path + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage + '_'
-                          + '_robot_utilisation.eps', format='eps')
+                          + '_robot_00_utilisation.eps', format='eps')
 
     def plot_picker_wait_time(self):
         """

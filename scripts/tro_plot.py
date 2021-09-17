@@ -9,8 +9,7 @@
 
 import data_visualisation.visualise
 
-
-N_ITERATION = 8
+N_ITERATION = 10
 
 
 if __name__ == "__main__":
