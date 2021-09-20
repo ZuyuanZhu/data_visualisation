@@ -14,7 +14,7 @@ import os
 N_ITERATION = 10
 
 if __name__ == "__main__":
-    data_path = "/home/zuyuan/des_logs/4Polytun_nTcap_nTcall/"
+    data_path = "/home/zuyuan/des_logs/robot_highways/"
     data_folder_list = []
     for name in os.listdir(data_path):
         if os.path.isdir(data_path + name):

@@ -170,9 +170,9 @@ class VisualiseCapacity(vis.Visualise):
             self.ax1.plot(x_axis, picker_utilisation_mean, label="Tcap={}, Tcall={}".format(n_cap, n_call),
                           linestyle='-.', color=color, linewidth=self.linewidth)
             m = picker_utilisation_mean_median[0]
-            self.ax1.plot(x_axis, picker_utilisation_mean_median,
-                          label=('Median utilisation(%.1f ' % m) + '%)',
-                          color=color)
+            # self.ax1.plot(x_axis, picker_utilisation_mean_median,
+            #               label=('Median utilisation(%.1f ' % m) + '%)',
+            #               color=color)
 
             # n_cap: tray capacity; n_call: tray calling moment
             if n_call == n_cap:
@@ -189,7 +189,8 @@ class VisualiseCapacity(vis.Visualise):
         self.ax1.legend(loc='center left', prop={'size': self.legend_size}, bbox_to_anchor=(1.1, 0.5))
 
         self.ax1.set_xlabel('Number of robots', fontdict=self.font)
-        self.ax1.set_ylabel('Process completion time (s)', fontdict=self.font)
+        # self.ax1.set_ylabel('Process completion time (s)', fontdict=self.font)
+        self.ax1.set_ylabel('Picker utilisation (%)', fontdict=self.font)  # we already handled the x-label with ax1
         self.ax1.tick_params(axis='y', labelcolor='tab:olive', labelsize=self.label_size)
         self.ax1.tick_params(axis='x', labelsize=self.label_size)
         self.fig1.tight_layout()  # otherwise the right y-label is slightly clipped

@@ -135,6 +135,8 @@ class VisualiseCapacity(vis.Visualise):
         # Process completion time and picker utilisation
         self.plot_picker_utilisation()
 
+        self.plot_picker_wait_time()
+
     # def plot_robot_utilisation(self):
     #     """
     #     Robot utilisation
@@ -197,109 +199,106 @@ class VisualiseCapacity(vis.Visualise):
     #     self.fig2.savefig(self.data_path + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage + '_'
     #                       + '_robot_00_utilisation.eps', format='eps')
     #
-    # def plot_picker_wait_time(self):
-    #     """
-    #     Process wait for robot time
-    #     :return: None
-    #     """
-    #     finish_time_array = np.array(self.plot_d["sim_finish_time_simpy"])
-    #     finish_time_array = np.rot90(finish_time_array)
-    #     self.finish_time_array = finish_time_array
-    #
-    #     # ignore n_robots == 0
-    #     finish_time_array_with_robots = np.array(self.plot_d["sim_finish_time_simpy"][1:])
-    #     finish_time_array_with_robots = np.rot90(finish_time_array_with_robots)
-    #     self.finish_time_array_with_robots = finish_time_array_with_robots
-    #
-    #     finish_time_array_mean = np.mean(finish_time_array, axis=0)
-    #     finish_time_array_mean = finish_time_array_mean.tolist()
-    #     finish_time_array_mean_median = [finish_time_array_mean[0] for x in range(len(finish_time_array_mean))]
-    #
-    #     picker_wait_for_robot_time_array = np.array(self.plot_d["picker_wait_for_robot_time_array"])
-    #     picker_wait_for_robot_time_array = np.rot90(picker_wait_for_robot_time_array)
-    #
-    #     n_pickers = self.plot_d["n_pickers"]
-    #
-    #     picker_wait_for_robot_time_array_mean = np.divide(picker_wait_for_robot_time_array, n_pickers)
-    #     picker_wait_for_robot_time_array_mean_trials = np.mean(picker_wait_for_robot_time_array_mean, axis=0)
-    #     picker_wait_for_robot_time_array_mean_trials = picker_wait_for_robot_time_array_mean_trials.tolist()
-    #
-    #     picker_wait_rate = 100 * np.divide(picker_wait_for_robot_time_array, finish_time_array * n_pickers)
-    #     picker_wait_rate_mean = np.mean(picker_wait_rate, axis=0)
-    #     picker_wait_rate_mean = picker_wait_rate_mean.tolist()
-    #     # picker_wait_rate_mean_median = [picker_wait_rate_mean[0] for x in range(len(picker_wait_rate_mean))]
-    #
-    #     n_robots = self.plot_d["n_robots"]
-    #     labels = [str(i) for i in n_robots]
-    #     x_axis = [i+1 for i in n_robots]
-    #
-    #     # ### Process completion time   ###
-    #     color_c = 'tab:olive'
-    #     self.ax3.set_xlabel('Number of robots', fontdict=self.font)
-    #     self.ax3.set_ylabel('Process completion time (s)', fontdict=self.font)
-    #     # boxplot1 = self.ax3.boxplot(finish_time_array,
-    #     #                             vert=True,  # vertical box alignment
-    #     #                             patch_artist=True,  # fill with color
-    #     #                             labels=labels)  # will be used to label x-ticks
-    #     # self.ax3.plot(x_axis, finish_time_array_mean, linestyle=':', label='Process completion time (s)', color=color_c)
-    #     self.ax3.bar(x_axis, finish_time_array_mean, label='Process completion time (s)', color=color_c)
-    #     # show bar value only when total robot number smaller than 11
-    #     if len(x_axis) < 11:
-    #         for i in range(len(x_axis)):
-    #             finish_time = '%.1f' % finish_time_array_mean[i]
-    #             plt.text(i+1, finish_time_array_mean[i], finish_time, fontdict=self.font_over_bar, ha='center', va='bottom')
-    #
-    #     # ### Picker waiting for robot time ###
-    #     color = 'tab:gray'
-    #     self.ax3.bar(x_axis, picker_wait_for_robot_time_array_mean_trials, label='Picker waiting for robot time (s)', color=color)
-    #     # show bar value only when total robot number smaller than 11
-    #     if len(x_axis) < 11:
-    #         for i in range(len(x_axis)):
-    #             wait_time = '%.1f' % picker_wait_for_robot_time_array_mean_trials[i]
-    #             plt.text(i+1,
-    #                      picker_wait_for_robot_time_array_mean_trials[i],
-    #                      wait_time,
-    #                      fontdict=self.font_over_bar, ha='center', va='bottom')
-    #
-    #     # self.ax3.boxplot(picker_wait_for_robot_time_array_mean,
-    #     #                  vert=True,
-    #     #                  patch_artist=True,
-    #     #                  labels=labels)
-    #     # self.ax3.plot(x_axis, picker_wait_for_robot_time_array_mean_trials, linestyle='--', label='Picker waiting for robot time (s)', color=color)
-    #
-    #     self.ax3.tick_params(axis='y', labelcolor=color_c, labelsize=self.label_size)
-    #     self.ax3.tick_params(axis='x', labelsize=self.label_size)
-    #
-    #     # ### Picker waiting rate   ###
-    #     ax3_2 = self.ax3.twinx()
-    #
-    #     color = 'tab:blue'
-    #     ax3_2.set_ylabel('Picker waiting rate (%)', fontdict=self.font)  # we already handled the x-label with ax1
-    #     boxplot2 = ax3_2.boxplot(picker_wait_rate,
-    #                              vert=True,  # vertical box alignment
-    #                              patch_artist=False,  # fill with color
-    #                              labels=labels)  # will be used to label x-ticks
-    #     ax3_2.plot(x_axis, picker_wait_rate_mean, linestyle='-.', label='Picker waiting rate (%)', color=color, linewidth=self.linewidth)
-    #     # m = picker_wait_rate_mean_median[0]
-    #
-    #     ax3_2.tick_params(axis='y', labelcolor=color, labelsize=self.label_size)
-    #
-    #     # fill with colors
-    #     colors1 = ['lightblue']
-    #     colors2 = ['white']
-    #
-    #     # fill the box with color
-    #     # for patch, color in zip(boxplot1['boxes'], colors1):
-    #     #     patch.set_facecolor(color)
-    #
-    #     self.fig3.tight_layout()  # otherwise the right y-label is slightly clipped
-    #     # plt.show()
-    #
-    #     self.fig3.legend(loc='upper right', prop={'size': self.legend_size})  # loc='upper right'
-    #
-    #     self.fig3.savefig(self.data_path + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage + '_'
-    #                       '_process_completion_time_and_picker_wait_rate.eps',
-    #                       format='eps')
+    def plot_picker_wait_time(self):
+        """
+        Process wait for robot time
+        :return: None
+        """
+        ax3_2 = None
+        n_cap = 1
+        n_call = 1
+        for idx, plot_data in enumerate(self.plot_data_all):
+            finish_time_array = np.array(plot_data["sim_finish_time_simpy"])
+            finish_time_array = np.rot90(finish_time_array)
+            self.finish_time_array = finish_time_array
+
+            # ignore n_robots == 0
+            finish_time_array_with_robots = np.array(plot_data["sim_finish_time_simpy"][1:])
+            finish_time_array_with_robots = np.rot90(finish_time_array_with_robots)
+            self.finish_time_array_with_robots = finish_time_array_with_robots
+
+            finish_time_array_mean = np.mean(finish_time_array, axis=0)
+            finish_time_array_mean = finish_time_array_mean.tolist()
+            finish_time_array_mean_median = [finish_time_array_mean[0] for x in range(len(finish_time_array_mean))]
+
+            picker_wait_for_robot_time_array = np.array(plot_data["picker_wait_for_robot_time_array"])
+            picker_wait_for_robot_time_array = np.rot90(picker_wait_for_robot_time_array)
+
+            n_pickers = plot_data["n_pickers"]
+
+            picker_wait_for_robot_time_array_mean = np.divide(picker_wait_for_robot_time_array, n_pickers)
+            picker_wait_for_robot_time_array_mean_trials = np.mean(picker_wait_for_robot_time_array_mean, axis=0)
+            picker_wait_for_robot_time_array_mean_trials = picker_wait_for_robot_time_array_mean_trials.tolist()
+
+            picker_wait_rate = 100 * np.divide(picker_wait_for_robot_time_array, finish_time_array * n_pickers)
+            picker_wait_rate_mean = np.mean(picker_wait_rate, axis=0)
+            picker_wait_rate_mean = picker_wait_rate_mean.tolist()
+            # picker_wait_rate_mean_median = [picker_wait_rate_mean[0] for x in range(len(picker_wait_rate_mean))]
+
+            n_robots = plot_data["n_robots"]
+            labels = [str(i) for i in n_robots]
+            x_axis = [i+1 for i in n_robots]
+            color = self.colors[idx]
+
+
+            # # ### Process completion time   ###
+            color_c = 'tab:olive'
+            # self.ax3.bar(x_axis, finish_time_array_mean, label='Process completion time (s)', color=color_c)
+            # # show bar value only when total robot number smaller than 11
+            # if len(x_axis) < 11:
+            #     for i in range(len(x_axis)):
+            #         finish_time = '%.1f' % finish_time_array_mean[i]
+            #         plt.text(i+1, finish_time_array_mean[i], finish_time, fontdict=self.font_over_bar, ha='center', va='bottom')
+
+            # ### Picker waiting for robot time ###
+            self.ax3.plot(x_axis, picker_wait_for_robot_time_array_mean_trials, linestyle=':',
+                          label="Tcap={}, Tcall={}".format(n_cap, n_call), color=color, linewidth=self.linewidth)
+
+            # ONLY FOR ROBOT HIGHWAYS
+            if n_call == n_cap:
+                n_cap = 4
+                n_call = 3
+
+            # # show bar value only when total robot number smaller than 11
+            # if len(x_axis) < 11:
+            #     for i in range(len(x_axis)):
+            #         wait_time = '%.1f' % picker_wait_for_robot_time_array_mean_trials[i]
+            #         plt.text(i+1,
+            #                  picker_wait_for_robot_time_array_mean_trials[i],
+            #                  wait_time,
+            #                  fontdict=self.font_over_bar, ha='center', va='bottom')
+
+            # # ### Picker waiting rate   ###
+            # if ax3_2 is None:
+            #     ax3_2 = self.ax3.twinx()
+            #
+            # color = 'tab:blue'
+            # boxplot2 = ax3_2.boxplot(picker_wait_rate,
+            #                          vert=True,  # vertical box alignment
+            #                          patch_artist=False,  # fill with color
+            #                          labels=labels)  # will be used to label x-ticks
+            # ax3_2.plot(x_axis, picker_wait_rate_mean, linestyle='-.',
+            #            label='Picker waiting rate (%)', color=color, linewidth=self.linewidth)
+            # # m = picker_wait_rate_mean_median[0]
+            #
+
+        self.ax3.set_xlabel('Number of robots', fontdict=self.font)
+        self.ax3.set_ylabel('Picker waiting for robot time (s)', fontdict=self.font)
+
+        self.ax3.tick_params(axis='y', labelcolor=color, labelsize=self.label_size)
+        self.ax3.tick_params(axis='x', labelsize=self.label_size)
+        #
+        # ax3_2.set_ylabel('Picker waiting rate (%)', fontdict=self.font)  # we already handled the x-label with ax1
+        # ax3_2.tick_params(axis='y', labelcolor=color, labelsize=self.label_size)
+        #
+        self.fig3.tight_layout()  # otherwise the right y-label is slightly clipped
+        # plt.show()
+
+        self.fig3.legend(loc='upper right', prop={'size': self.legend_size})  # loc='upper right'
+
+        self.fig3.savefig(self.data_path_source + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage +
+                          '_process_completion_time_and_picker_wait_rate.eps',
+                          format='eps')
 
     def plot_picker_utilisation(self):
         """
@@ -329,25 +328,23 @@ class VisualiseCapacity(vis.Visualise):
 
             n_robots = plot_data["n_robots"]
             labels = [str(i) for i in n_robots]
-            x_axis = [i + 1 for i in n_robots]
+            x_axis = [i for i in n_robots]
 
             color = self.colors[idx]
             # self.ax1.set_xlabel('Number of robots', fontdict=self.font)
             # self.ax1.set_ylabel('Process completion time (s)', fontdict=self.font)
-            boxplot1 = self.ax1.boxplot(finish_time_array,
-                                        vert=True,  # vertical box alignment
-                                        patch_artist=True,  # fill with color
-                                        labels=labels)  # will be used to label x-ticks
-            self.ax1.plot(x_axis, finish_time_array_mean, linestyle=':', color=color, linewidth=self.linewidth)
+            # boxplot1 = self.ax1.boxplot(finish_time_array,
+            #                             vert=True,  # vertical box alignment
+            #                             patch_artist=True,  # fill with color
+            #                             labels=labels)  # will be used to label x-ticks
+            self.ax1.plot(x_axis, finish_time_array_mean,
+                          linestyle=':', color=color, linewidth=self.linewidth)
+            # self.ax1.plot(x_axis, finish_time_array_mean_median,
+            #               label="Tcap={}, Tcall={}".format(n_cap, n_call),
+            #               color=color)
             self.ax1.plot(x_axis, finish_time_array_mean_median,
-                          label="Tcap={}, Tcall={}".format(n_cap, n_call),
+                          label='No robots(%.1f s)' % finish_time_array_mean_median[0],
                           color=color)
-            # n_cap: tray capacity; n_call: tray calling moment
-            if n_call == n_cap:
-                n_cap += 1
-                n_call = 1
-            elif n_call < n_cap:
-                n_call += 1
 
             # self.ax1.tick_params(axis='y', labelcolor=color, labelsize=self.label_size)
             # self.ax1.tick_params(axis='x', labelsize=self.label_size)
@@ -357,16 +354,29 @@ class VisualiseCapacity(vis.Visualise):
 
             # color = 'tab:blue'
             # ax2.set_ylabel('Picker utilisation (%)', fontdict=self.font)  # we already handled the x-label with ax1
-            boxplot2 = ax2.boxplot(picker_utilisation,
-                                   vert=True,  # vertical box alignment
-                                   patch_artist=False,  # fill with color
-                                   labels=labels)  # will be used to label x-ticks
-            ax2.plot(x_axis, picker_utilisation_mean, linestyle='-.', color=color, linewidth=self.linewidth)
+            # boxplot2 = ax2.boxplot(picker_utilisation,
+            #                        vert=True,  # vertical box alignment
+            #                        patch_artist=False,  # fill with color
+            #                        labels=labels)  # will be used to label x-ticks
+            ax2.plot(x_axis, picker_utilisation_mean, label="Tcap={}, Tcall={}".format(n_cap, n_call),
+                     linestyle='-.', color=color, linewidth=self.linewidth)
             m = picker_utilisation_mean_median[0]
-            ax2.plot(x_axis, picker_utilisation_mean_median,
-                     label=('Median picker utilisation, no robots (%.1f ' % m) + '%)',
-                     color=color)
+            # ax2.plot(x_axis, picker_utilisation_mean_median,
+            #          label=('Median picker utilisation, no robots (%.1f ' % m) + '%)',
+            #          color=color)
             # ax2.tick_params(axis='y', labelcolor=color, labelsize=self.label_size)
+
+            # n_cap: tray capacity; n_call: tray calling moment
+            # if n_call == n_cap:
+            #     n_cap += 1
+            #     n_call = 1
+            # elif n_call < n_cap:
+            #     n_call += 1
+
+            # ONLY FOR ROBOT HIGHWAYS
+            if n_call == n_cap:
+                n_cap = 4
+                n_call = 3
 
             # fill with colors
             colors1 = ['lightblue']
@@ -383,6 +393,7 @@ class VisualiseCapacity(vis.Visualise):
 
         # Put a legend to the right of the current axis
         self.ax1.legend(loc='center left', prop={'size': self.legend_size}, bbox_to_anchor=(1.1, 0.5))
+        ax2.legend( loc='center left', prop={'size': self.legend_size}, bbox_to_anchor=(1.1, 0.6))
 
         self.ax1.set_xlabel('Number of robots', fontdict=self.font)
         self.ax1.set_ylabel('Process completion time (s)', fontdict=self.font)

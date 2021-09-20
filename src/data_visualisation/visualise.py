@@ -66,7 +66,7 @@ class Visualise(object):
         if n_iteration < 10:
             self.fig3, self.ax3 = plt.subplots(nrows=1, ncols=1, figsize=(12, 6))
         else:
-            self.fig3, self.ax3 = plt.subplots(nrows=1, ncols=1, figsize=(12, 6))
+            self.fig3, self.ax3 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
 
         self.init_plot()
 
