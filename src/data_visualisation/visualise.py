@@ -406,4 +406,4 @@ class Visualise(object):
 
         self.fig1.savefig(self.data_path + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage + '_'
                           '_process_completion_time_and_picker_utilisation.eps',
-                          format='eps')
+                           format='eps')

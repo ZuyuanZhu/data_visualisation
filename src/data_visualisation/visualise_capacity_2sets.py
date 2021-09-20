@@ -27,6 +27,7 @@ class VisualiseCapacity(vis.Visualise):
         self.plot_data_all = []
         self.colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown',
                        'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
+        self.fig1_2, self.ax1_2 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
         super(VisualiseCapacity, self).__init__(data_path_list, file_type, n_iteration)
 
     def get_folder_files(self, data_path_list):
@@ -135,6 +136,75 @@ class VisualiseCapacity(vis.Visualise):
         # Process completion time and picker utilisation
         self.plot_picker_utilisation()
 
+        self.plot_picker_wait_time()
+
+    def plot_picker_wait_time(self):
+        """
+        Process wait for robot time
+        :return: None
+        """
+        ax3_2 = None
+        n_cap = 1
+        n_call = 1
+        for idx, plot_data in enumerate(self.plot_data_all):
+            finish_time_array = np.array(plot_data["sim_finish_time_simpy"])
+            finish_time_array = np.rot90(finish_time_array)
+            self.finish_time_array = finish_time_array
+
+            # ignore n_robots == 0
+            finish_time_array_with_robots = np.array(plot_data["sim_finish_time_simpy"][1:])
+            finish_time_array_with_robots = np.rot90(finish_time_array_with_robots)
+            self.finish_time_array_with_robots = finish_time_array_with_robots
+
+            finish_time_array_mean = np.mean(finish_time_array, axis=0)
+            finish_time_array_mean = finish_time_array_mean.tolist()
+            finish_time_array_mean_median = [finish_time_array_mean[0] for x in range(len(finish_time_array_mean))]
+
+            picker_wait_for_robot_time_array = np.array(plot_data["picker_wait_for_robot_time_array"])
+            picker_wait_for_robot_time_array = np.rot90(picker_wait_for_robot_time_array)
+
+            n_pickers = plot_data["n_pickers"]
+
+            picker_wait_for_robot_time_array_mean = np.divide(picker_wait_for_robot_time_array, n_pickers)
+            picker_wait_for_robot_time_array_mean_trials = np.mean(picker_wait_for_robot_time_array_mean, axis=0)
+            picker_wait_for_robot_time_array_mean_trials = picker_wait_for_robot_time_array_mean_trials.tolist()
+
+            picker_wait_rate = 100 * np.divide(picker_wait_for_robot_time_array, finish_time_array * n_pickers)
+            picker_wait_rate_mean = np.mean(picker_wait_rate, axis=0)
+            picker_wait_rate_mean = picker_wait_rate_mean.tolist()
+            # picker_wait_rate_mean_median = [picker_wait_rate_mean[0] for x in range(len(picker_wait_rate_mean))]
+
+            n_robots = plot_data["n_robots"]
+            labels = [str(i) for i in n_robots]
+            x_axis = [i for i in n_robots]
+            color = self.colors[idx]
+
+            # ### Picker waiting for robot time ###
+            self.ax3.plot(x_axis, picker_wait_for_robot_time_array_mean_trials, linestyle=':',
+                          label="Waiting time, Tcap={}, Tcall={}".format(n_cap, n_call), color=color, linewidth=self.linewidth)
+
+            self.ax3.plot(x_axis, finish_time_array_mean, linestyle='-.',
+                          label="Completion time, Tcap={}, Tcall={}".format(n_cap, n_call), color=color, linewidth=self.linewidth)
+
+            # ONLY FOR ROBOT HIGHWAYS
+            if n_call == n_cap:
+                n_cap = 4
+                n_call = 3
+
+        self.ax3.set_xlabel('Number of robots', fontdict=self.font)
+        self.ax3.set_ylabel('Time (s)', fontdict=self.font)
+
+        self.ax3.tick_params(axis='y', labelsize=self.label_size)
+        self.ax3.tick_params(axis='x', labelsize=self.label_size)
+
+        self.fig3.tight_layout()  # otherwise the right y-label is slightly clipped
+
+        self.fig3.legend(loc='upper right', prop={'size': self.legend_size})  # loc='upper right'
+
+        self.fig3.savefig(self.data_path_source + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage +
+                          '_process_completion_time_and_picker_wait_rate.eps',
+                          format='eps')
+
     def plot_picker_utilisation(self):
         """
         Process completion time and picker utilisation
@@ -163,39 +233,46 @@ class VisualiseCapacity(vis.Visualise):
 
             n_robots = plot_data["n_robots"]
             labels = [str(i) for i in n_robots]
-            x_axis = [i + 1 for i in n_robots]
+            x_axis = [i for i in n_robots]
 
             color = self.colors[idx]
 
-            self.ax1.plot(x_axis, picker_utilisation_mean, label="Tcap={}, Tcall={}".format(n_cap, n_call),
-                          linestyle='-.', color=color, linewidth=self.linewidth)
+            self.ax11.plot(x_axis, finish_time_array_mean,
+                           label='Completion time, Tcap={}, Tcall={}'.format(n_cap, n_call),
+                           linestyle=':', color=color, linewidth=self.linewidth)
+
+            self.ax11.plot(x_axis, finish_time_array_mean_median,
+                           label='No robots({} s), Tcap={}, Tcall={}'.format(round(finish_time_array_mean_median[0], 1), n_cap, n_call),
+                           color=color)
+
+            self.ax1_2.plot(x_axis, picker_utilisation_mean, label="Tcap={}, Tcall={}".format(n_cap, n_call),
+                            linestyle='-.', color=color, linewidth=self.linewidth)
             m = picker_utilisation_mean_median[0]
-            # self.ax1.plot(x_axis, picker_utilisation_mean_median,
-            #               label=('Median utilisation(%.1f ' % m) + '%)',
-            #               color=color)
 
-            # n_cap: tray capacity; n_call: tray calling moment
+            # ONLY FOR ROBOT HIGHWAYS
             if n_call == n_cap:
-                n_cap += 1
-                n_call = 1
-            elif n_call < n_cap:
-                n_call += 1
+                n_cap = 4
+                n_call = 3
 
-        # Shrink current axis by .
-        box = self.ax1.get_position()
-        self.ax1.set_position([box.x0, box.y0, box.width * 1, box.height])
+        self.fig11.legend(loc='upper right', prop={'size': self.legend_size})  # loc='upper right'
+        self.fig1_2.legend(loc='upper right', prop={'size': self.legend_size})  # loc='upper right'
 
-        # Put a legend to the right of the current axis
-        self.ax1.legend(loc='center left', prop={'size': self.legend_size}, bbox_to_anchor=(1.1, 0.5))
+        self.ax11.set_xlabel('Number of robots', fontdict=self.font)
+        self.ax11.set_ylabel('Process completion time (s)', fontdict=self.font)
+        self.ax11.tick_params(axis='y', labelcolor='tab:olive', labelsize=self.label_size)
+        self.ax11.tick_params(axis='x', labelsize=self.label_size)
+        self.ax1_2.set_ylabel('Picker utilisation (%)', fontdict=self.font)  # we already handled the x-label with ax1
+        self.ax1_2.set_xlabel('Number of robots', fontdict=self.font)
+        self.ax1_2.tick_params(axis='x', labelsize=self.label_size)
+        self.ax1_2.tick_params(axis='y', labelcolor='tab:blue', labelsize=self.label_size)
+        self.fig11.tight_layout()  # otherwise the right y-label is slightly clipped
+        self.fig1_2.tight_layout()
 
-        self.ax1.set_xlabel('Number of robots', fontdict=self.font)
-        # self.ax1.set_ylabel('Process completion time (s)', fontdict=self.font)
-        self.ax1.set_ylabel('Picker utilisation (%)', fontdict=self.font)  # we already handled the x-label with ax1
-        self.ax1.tick_params(axis='y', labelcolor='tab:olive', labelsize=self.label_size)
-        self.ax1.tick_params(axis='x', labelsize=self.label_size)
-        self.fig1.tight_layout()  # otherwise the right y-label is slightly clipped
-
-        self.fig1.savefig(
+        self.fig11.savefig(
             self.data_path_source + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage +
-            '_process_completion_time_and_picker_utilisation.eps',
+            '_process_completion_time.eps',
+            format='eps')
+        self.fig1_2.savefig(
+            self.data_path_source + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage +
+            '_picker_utilisation.eps',
             format='eps')

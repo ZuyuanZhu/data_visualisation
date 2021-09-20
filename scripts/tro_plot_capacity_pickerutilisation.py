@@ -8,13 +8,13 @@
 #        using different tray capacity and calling moment
 # ----------------------------------
 
-import data_visualisation.visualise_capacity_picker_utilisation
+import data_visualisation.visualise_capacity_picker_utilisation_10sets
 import os
 
 N_ITERATION = 10
 
 if __name__ == "__main__":
-    data_path = "/home/zuyuan/des_logs/robot_highways/"
+    data_path = "/home/zuyuan/des_logs/3Polytun_nTcap_nTcall/"
     data_folder_list = []
     for name in os.listdir(data_path):
         if os.path.isdir(data_path + name):
@@ -25,4 +25,4 @@ if __name__ == "__main__":
     data_folder_list.sort()
     print(data_folder_list)
     file_type = 'yaml'
-    visualisation = data_visualisation.visualise_capacity_picker_utilisation.VisualiseCapacity(data_path, data_folder_list, file_type, N_ITERATION)
+    visualisation = data_visualisation.visualise_capacity_picker_utilisation_10sets.VisualiseCapacity(data_path, data_folder_list, file_type, N_ITERATION)
