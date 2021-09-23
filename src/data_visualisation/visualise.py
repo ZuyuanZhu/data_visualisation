@@ -61,7 +61,7 @@ class Visualise(object):
         self.label_size = 14
         self.legend_size = 14
         self.linewidth = 4
-        self.fig1, self.ax1 = plt.subplots(nrows=1, ncols=1, figsize=(12, 9))
+        self.fig1, self.ax1 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
         self.fig2, self.ax2 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
         if n_iteration < 10:
             self.fig3, self.ax3 = plt.subplots(nrows=1, ncols=1, figsize=(12, 6))

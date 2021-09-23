@@ -27,7 +27,8 @@ class VisualiseCapacity(vis.Visualise):
         self.plot_data_all = []
         self.colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown',
                        'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
-        self.fig11, self.ax11 = plt.subplots(nrows=1, ncols=1, figsize=(12, 9))
+        self.fig11, self.ax11 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
+        self.fig33, self.ax33 = plt.subplots(nrows=1, ncols=1, figsize=(10, 10))
         super(VisualiseCapacity, self).__init__(data_path_list, file_type, n_iteration)
 
     def get_folder_files(self, data_path_list):
@@ -133,8 +134,11 @@ class VisualiseCapacity(vis.Visualise):
         self.load_data(self.data_path_list, self.entries_list_all, self.file_type)
         self.get_plot_data(self.event_data_all, self.n_iteration)
 
-        # Process completion time and picker utilisation
+        # Picker utilisation
         self.plot_picker_utilisation()
+
+        # Picker waiting for robot time
+        self.plot_picker_wait_time()
 
     def plot_picker_utilisation(self):
         """
@@ -164,7 +168,7 @@ class VisualiseCapacity(vis.Visualise):
 
             n_robots = plot_data["n_robots"]
             labels = [str(i) for i in n_robots]
-            x_axis = [i + 1 for i in n_robots]
+            x_axis = [i for i in n_robots]
 
             color = self.colors[idx]
 
@@ -182,12 +186,12 @@ class VisualiseCapacity(vis.Visualise):
             elif n_call < n_cap:
                 n_call += 1
 
-        # Shrink current axis by .
+        # Use a box to display the legend
         box = self.ax11.get_position()
         self.ax11.set_position([box.x0, box.y0, box.width * 1, box.height])
 
         # Put a legend to the right of the current axis
-        self.ax11.legend(loc='center left', prop={'size': self.legend_size}, bbox_to_anchor=(1.1, 0.5))
+        self.ax11.legend(loc='center left', prop={'size': self.legend_size}, bbox_to_anchor=(0.7, 0.2))
 
         self.ax11.set_xlabel('Number of robots', fontdict=self.font)
         # self.ax1.set_ylabel('Process completion time (s)', fontdict=self.font)
@@ -196,7 +200,85 @@ class VisualiseCapacity(vis.Visualise):
         self.ax11.tick_params(axis='x', labelsize=self.label_size)
         self.fig11.tight_layout()  # otherwise the right y-label is slightly clipped
 
+        # self.fig11.legend(loc='center right', prop={'size': self.legend_size})  # loc='upper right'
+
         self.fig11.savefig(
             self.data_path_source + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage +
-            '_process_completion_time_and_picker_utilisation.eps',
+            'picker_utilisation_comparison.eps',
             format='eps')
+
+    def plot_picker_wait_time(self):
+        """
+        Process wait for robot time
+        :return: None
+        """
+        ax3_2 = None
+        n_cap = 1
+        n_call = 1
+        for idx, plot_data in enumerate(self.plot_data_all):
+            finish_time_array = np.array(plot_data["sim_finish_time_simpy"])
+            finish_time_array = np.rot90(finish_time_array)
+            self.finish_time_array = finish_time_array
+
+            # ignore n_robots == 0
+            finish_time_array_with_robots = np.array(plot_data["sim_finish_time_simpy"][1:])
+            finish_time_array_with_robots = np.rot90(finish_time_array_with_robots)
+            self.finish_time_array_with_robots = finish_time_array_with_robots
+
+            finish_time_array_mean = np.mean(finish_time_array, axis=0)
+            finish_time_array_mean = finish_time_array_mean.tolist()
+            finish_time_array_mean_median = [finish_time_array_mean[0] for x in range(len(finish_time_array_mean))]
+
+            picker_wait_for_robot_time_array = np.array(plot_data["picker_wait_for_robot_time_array"])
+            picker_wait_for_robot_time_array = np.rot90(picker_wait_for_robot_time_array)
+
+            n_pickers = plot_data["n_pickers"]
+
+            picker_wait_for_robot_time_array_mean = np.divide(picker_wait_for_robot_time_array, n_pickers)
+            picker_wait_for_robot_time_array_mean_trials = np.mean(picker_wait_for_robot_time_array_mean, axis=0)
+            picker_wait_for_robot_time_array_mean_trials = picker_wait_for_robot_time_array_mean_trials.tolist()
+
+            picker_wait_rate = 100 * np.divide(picker_wait_for_robot_time_array, finish_time_array * n_pickers)
+            picker_wait_rate_mean = np.mean(picker_wait_rate, axis=0)
+            picker_wait_rate_mean = picker_wait_rate_mean.tolist()
+            # picker_wait_rate_mean_median = [picker_wait_rate_mean[0] for x in range(len(picker_wait_rate_mean))]
+
+            n_robots = plot_data["n_robots"]
+            labels = [str(i) for i in n_robots]
+            x_axis = [i for i in n_robots]
+            color = self.colors[idx]
+
+            # ### Picker waiting for robot time ###
+            self.ax33.plot(x_axis, picker_wait_for_robot_time_array_mean_trials, linestyle=':',
+                          label="Waiting time, Tcap={}, Tcall={}".format(n_cap, n_call), color=color, linewidth=self.linewidth)
+
+            self.ax33.plot(x_axis, finish_time_array_mean, linestyle='-.',
+                          label="Completion time, Tcap={}, Tcall={}".format(n_cap, n_call), color=color, linewidth=self.linewidth)
+
+            # n_cap: tray capacity; n_call: tray calling moment
+            if n_call == n_cap:
+                n_cap += 1
+                n_call = 1
+            elif n_call < n_cap:
+                n_call += 1
+
+        # # Use a box to display the legend
+        # box = self.ax33.get_position()
+        # self.ax33.set_position([box.x0, box.y0, box.width * 1, box.height])
+        #
+        # # Put a legend to the right of the current axis
+        # self.ax33.legend(loc='center left', prop={'size': self.legend_size}, bbox_to_anchor=(1.1, 0.5))
+
+        self.ax33.set_xlabel('Number of robots', fontdict=self.font)
+        self.ax33.set_ylabel('Time (s)', fontdict=self.font)
+
+        self.ax33.tick_params(axis='y', labelsize=self.label_size)
+        self.ax33.tick_params(axis='x', labelsize=self.label_size)
+
+        self.fig33.tight_layout()  # otherwise the right y-label is slightly clipped
+
+        self.fig33.legend(loc='upper right', prop={'size': self.legend_size})  # loc='upper right'
+
+        self.fig33.savefig(self.data_path_source + '_' + self.map_name + '_' + self.policy + '_' + self.cold_storage +
+                           '_process_completion_time_and_picker_wait_time.eps',
+                           format='eps')

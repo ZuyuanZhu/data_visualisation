@@ -14,7 +14,7 @@ N_ITERATION = 10
 
 if __name__ == "__main__":
 
-    folder = "2021_Sep_17_16_52_25"
+    folder = "2021_Sep_17_16_11_25"
     data_folder_path = "/home/zuyuan/des_logs/"
     data_path = data_folder_path + folder
     file_type = 'yaml'
