@@ -70,11 +70,11 @@ class VisualiseHeatmap(object):
     def close_plot(self):
         """close plot"""
         matplotlib.pyplot.show()
-        self.fig.savefig(self.data_path + "/" + datetime.now().isoformat().replace(":", "_") + "redo.eps")
+        self.fig.savefig(self.data_path + "/" + datetime.now().isoformat().replace(":", "_") + "redo.pdf")
 
         # Save just the portion _inside_ the second axis's boundaries
         extent = self.ax.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-        self.fig.savefig(self.data_path + "/" + datetime.now().isoformat().replace(":", "_") + "redo_heatmap.eps",
+        self.fig.savefig(self.data_path + "/" + datetime.now().isoformat().replace(":", "_") + "redo_heatmap.pdf",
                          bbox_inches=extent.expanded(1.29, 1.29))
 
         self.f_handle.close()
