@@ -17,8 +17,9 @@ import seaborn
 import yaml
 from scandir import scandir
 
-DEMAND_MAX = 126.4
+# DEMAND_MAX = 249.1
 # DEMAND_MAX = 83.4
+DEMAND_MAX = 1
 
 
 def list_directories(path):
@@ -74,7 +75,7 @@ class VisualiseHeatmap(object):
         # Save just the portion _inside_ the second axis's boundaries
         extent = self.ax.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
         self.fig.savefig(self.data_path + "/" + datetime.now().isoformat().replace(":", "_") + "redo_heatmap.eps",
-                         bbox_inches=extent.expanded(1.28, 1.26))
+                         bbox_inches=extent.expanded(1.29, 1.29))
 
         self.f_handle.close()
 
@@ -122,7 +123,10 @@ class VisualiseHeatmap(object):
         heatmap_v_mean = numpy.mean(heatmap_v, axis=0)
         heatmap_v_mean = heatmap_v_mean.tolist()
         self.heatmap_v_mean = heatmap_v_mean
-        self.heatmap_v_mean_unify = [x/DEMAND_MAX for x in self.heatmap_v_mean]
+        if DEMAND_MAX == 1:
+            self.heatmap_v_mean_unify = self.heatmap_v_mean
+        else:
+            self.heatmap_v_mean_unify = [x/DEMAND_MAX for x in self.heatmap_v_mean]
         heatmap_v_mean_unify = self.heatmap_v_mean_unify
         for i, x in enumerate(self.heatmap_node_pose_x_list[0]):
             for j, y in enumerate(self.heatmap_node_pose_y_list[0]):
@@ -139,7 +143,10 @@ class VisualiseHeatmap(object):
         # only initialise color bar once, then don't update it anymore
         if self.show_cbar:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
-            self.ax = seaborn.heatmap(df, cbar=True, vmin=0, vmax=1, rasterized=True)
+            if DEMAND_MAX == 1:
+                self.ax = seaborn.heatmap(df, cbar=True, rasterized=True)
+            else:
+                self.ax = seaborn.heatmap(df, cbar=True, vmin=0, vmax=1, rasterized=True)
             self.show_cbar = False
         else:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
@@ -154,7 +161,7 @@ class VisualiseHeatmap(object):
         # save heatmap details
         self.f_handle.writelines("# heatmap details\n")
         self.f_handle.writelines("map_name: %s\n" % self.map_name)
-        self.f_handle.writelines("trial: %d\n" % self.trial)
+        self.f_handle.writelines("trial: %d\n" % (self.trial - 1))
         self.f_handle.writelines("n_deadlock: %s\n" % self.n_deadlock)
         self.f_handle.writelines("n_deadlock_mean: %0.1f\n" % (sum(self.n_deadlock)/len(self.n_deadlock)))
         self.f_handle.writelines("simulation_time: %s\n" % self.simulation_time)
@@ -175,7 +182,7 @@ class VisualiseHeatmap(object):
 
 if __name__ == "__main__":
 
-    folder = "heatmap_chf_4_polytun_R2"
+    folder = "heatmap_chf_4_mirror_2"
     data_folder_path = "/home/zuyuan/des_simpy_logs/"
     data_path = data_folder_path + folder
     file_type = 'heatmap.yaml'
