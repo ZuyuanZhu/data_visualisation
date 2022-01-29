@@ -19,7 +19,12 @@ from scandir import scandir
 
 # DEMAND_MAX = 249.1
 # DEMAND_MAX = 83.4
-DEMAND_MAX = 1
+# DEMAND_MAX = 1
+# DEMAND_MAX = 1327.4
+# DEMAND_MAX = 148.6
+# DEMAND_MAX = 255.6  # clockhouse_transportation_additional_lanes_side_bases.tmap2
+# DEMAND_MAX = 68.6  # simpy_riseholme_3_bases_original.tmap2
+DEMAND_MAX = 1308.2  # 2022_Jan_27_11_21_58_P4_R2_simpy_clockhouse_vanity_logistics_across_4
 
 
 def list_directories(path):
@@ -146,15 +151,20 @@ class VisualiseHeatmap(object):
             if DEMAND_MAX == 1:
                 self.ax = seaborn.heatmap(df, cbar=True, rasterized=True)
             else:
-                self.ax = seaborn.heatmap(df, cbar=True, vmin=0, vmax=1, rasterized=True)
+                self.ax = seaborn.heatmap(df, cmap='Blues', cbar=True, vmin=0, vmax=1, rasterized=True)
             self.show_cbar = False
         else:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
             self.ax = seaborn.heatmap(df, cbar=False, vmin=0, vmax=1, rasterized=True)
         # matplotlib.rcParams.update({'font.size': 22})
         # self.ax[1].set(xlabel='Node pose y', ylabel='Node pose x')
-        self.ax.set_xlabel('Node pose y', fontsize=16)
-        self.ax.set_ylabel('Node pose x', fontsize=16)
+
+        # set Axis label
+        # self.ax.set_xlabel('Node pose y', fontsize=16)
+        # self.ax.set_ylabel('Node pose x', fontsize=16)
+
+        # hide Axis ticks and numbers
+        self.ax.tick_params(colors='white', left=False, bottom=False)
 
         self.fig.canvas.draw()
 
@@ -182,7 +192,7 @@ class VisualiseHeatmap(object):
 
 if __name__ == "__main__":
 
-    folder = "heatmap_chf_4_mirror_2"
+    folder = "2022_Jan_27_15_48_34_P4_R2_simpy_clockhouse_vanity_logistics_across_5_middle_storage"
     data_folder_path = "/home/zuyuan/des_simpy_logs/"
     data_path = data_folder_path + folder
     file_type = 'heatmap.yaml'
