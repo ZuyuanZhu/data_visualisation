@@ -13,15 +13,15 @@
 #       3. run this script with the above folder
 # ----------------------------------
 
-import data_visualisation.visualise_topo_opt
+import data_visualisation.visualise_service
 
 N_ITERATION = 10
 
 
 if __name__ == "__main__":
 
-    folder = "robot_service_topo_comparison"
+    folder = "2022_Feb_02_17_38_29_clockhouse_transportation_additional_lanes_tmap2_TRO_Oct_Service_times"
     data_folder_path = "/home/zuyuan/des_simpy_logs/"
     data_path = data_folder_path + folder
     file_type = 'yaml'
-    vis = data_visualisation.visualise_topo_opt.Visualise(data_path, file_type, N_ITERATION)
+    vis = data_visualisation.visualise_service.Visualise(data_path, file_type, N_ITERATION)
