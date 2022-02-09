@@ -16,10 +16,13 @@ import yaml
 
 # Trials in Sep were with Pickers waiting. There were many calls that were not serviced/cancelled.
 # In Oct, we had trials in two days. Day 1 with pickers waiting and Day2 with pickers continuing picking.
-TIME_2_STORAGE = [71.46, 41.28]  # contains noise
+# TIME_2_STORAGE = [71.46, 41.28]  # contains noise
 TIME_2_PICKER = [81.24, 52.83]
-SERVICE_TIME_TOTAL = [181.45, 125.99]
+# SERVICE_TIME_TOTAL = [181.45, 125.99]
 SERVICE_DISTANCE = [1865.067616, 987.792829]
+
+TIME_2_STORAGE = [85.73, 63.57]             # corrected values
+SERVICE_TIME_TOTAL = [184.99, 125.99]       # corrected values
 
 
 def get_data(config_file):
@@ -94,6 +97,7 @@ class Visualise(object):
         self.fig4, self.ax4 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
         self.fig5, self.ax5 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
         self.fig6, self.ax6 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
+        self.fig7, self.ax7 = plt.subplots(nrows=1, ncols=1, figsize=(9, 9))
 
         self.init_plot()
 
@@ -283,7 +287,7 @@ class Visualise(object):
         self.ax5.set_xlabel('Picking strategy', fontdict=self.font)
         self.ax5.set_ylabel('Time to picker (min)', fontdict=self.font)
 
-        boxplot = self.ax5.boxplot(np.divide(time_to_picker_array, 60),
+        boxplot = self.ax5.boxplot(np.divide(time_to_picker_array, 60),   # seconds to minutes
                                    vert=True,  # vertical box alignment
                                    patch_artist=False,
                                    labels=x_axis)
@@ -329,10 +333,39 @@ class Visualise(object):
 
         self.ax6.tick_params(axis='y', labelcolor=color, labelsize=self.label_size)
 
+        ######### robot service speed = service distance / service time to storage##################
+        x_axis = ['Day 1', 'Day 2']  # CHF vanity full
+        x_axis_line = [i + 1 for i in range(2)]  # CHF vanity full
+        self.ax7.set_xlabel('Picking strategy', fontdict=self.font)
+        self.ax7.set_ylabel('Robot service speed (m/s)', fontdict=self.font)
+        color = 'tab:blue'
+
+        service_speed_array = np.divide(service_distance_array, time_to_picker_array)
+        boxplot = self.ax7.boxplot(service_speed_array,
+                                   vert=True,  # vertical box alignment
+                                   patch_artist=False,
+                                   labels=x_axis)
+        self.ax7.tick_params(axis='y', labelsize=self.label_size)
+        self.ax7.tick_params(axis='x', labelsize=self.label_size)
+        service_speed_array_mean = np.mean(service_speed_array, axis=0)
+        self.ax7.plot(x_axis_line, service_speed_array_mean, linestyle=':',
+                      label="Simulation (m/s), Day1={}, Day2={}".format(round(service_speed_array_mean[0], 1),
+                                                                        round(service_speed_array_mean[1], 1)),
+                                                                        linewidth=self.linewidth)
+        time_2_picker_sec = map(lambda x: x * 60, TIME_2_PICKER)
+        service_speed_real = [i/j for i, j in zip(SERVICE_DISTANCE, time_2_picker_sec)]
+        self.ax7.plot(x_axis_line, service_speed_real, linestyle='-',
+                      label="Real (m/s), Day1={}, Day2={}".format(round(service_speed_real[0], 1),
+                                                                  round(service_speed_real[1], 1)),
+                                                                  linewidth=self.linewidth)
+        self.fig7.savefig(self.data_path + '_' + self.policy + '_' + self.cold_storage + '_'
+                          + '_service_speed.pdf', format='pdf')
+
         self.fig3.legend(loc='upper right', prop={'size': self.legend_size})
         self.fig4.legend(loc='upper right', prop={'size': self.legend_size})
         self.fig5.legend(loc='upper right', prop={'size': self.legend_size})
         self.fig6.legend(loc='upper right', prop={'size': self.legend_size})
+        self.fig7.legend(loc='upper right', prop={'size': self.legend_size})
 
         plt.show()
 
