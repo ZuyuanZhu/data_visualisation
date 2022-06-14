@@ -8,6 +8,7 @@ import os
 from rosbag import Bag
 import os.path
 from fnmatch import fnmatchcase
+from matplotlib import colors
 
 
 class VisualiseSignal(object):
@@ -29,13 +30,13 @@ class VisualiseSignal(object):
         self.heatmap_columns = None
 
         self.show_cbar = True
-        self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 9), sharex=False, sharey=False)
+        self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 16), sharex=False, sharey=False)
         # self.fig3, self.ax3 = plt.subplots(1, 1, figsize=(16, 6), sharex=False, sharey=False)
 
         # bag_name = 'bag1.bag'
         if not os.path.exists(self.data_path + '/' + self.bag_name):
             self.merge_bag()
-        for g in [2, 3, 4, 5]:
+        for g in [2]:     # [2, 3, 4, 5]
             if g < 4:
                 self.sig_max = -70
                 self.sig_min = -140
@@ -43,6 +44,8 @@ class VisualiseSignal(object):
                 self.sig_max = 0
                 self.sig_min = -20
             self.init_heatmap(self.bag_name, g)
+            plt.close('all')
+            self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 16), sharex=False, sharey=False)
 
     def merge_bag(self):
         """
@@ -142,11 +145,13 @@ class VisualiseSignal(object):
 
         if self.show_cbar:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
-            self.ax = sea.heatmap(df_ht, cbar=True, vmin=self.sig_min, vmax=self.sig_max, rasterized=True)
+            self.ax = sea.heatmap(df_ht, cbar=True, mask=(df_ht == 0),
+                                  vmin=self.sig_min, vmax=self.sig_max, square=True, rasterized=True)
             self.show_cbar = True
         else:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
-            self.ax = sea.heatmap(df_ht, cbar=False, vmin=self.sig_min, vmax=self.sig_max, rasterized=True)
+            self.ax = sea.heatmap(df_ht, cbar=False, mask=(df_ht == 0),
+                                  vmin=self.sig_min, vmax=self.sig_max, square=True, rasterized=True)
 
         self.ax.tick_params(colors='black', left=False, bottom=False)
 

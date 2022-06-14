@@ -9,10 +9,9 @@
 # ----------------------------------
 
 import data_visualisation.visualise_signal
-from data_visualisation.merge_rosbag import merge
 
 if __name__ == "__main__":
-    folder = "runs"
+    folder = "robot1_R91_R96"
     data_folder_path = "/home/zuyuan/rasberry_ws/src/RASberry/rasberry_core/new_tmule/"
     data_path = data_folder_path + folder
     file_type = 'bag'
