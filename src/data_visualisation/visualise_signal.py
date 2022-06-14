@@ -81,6 +81,9 @@ class VisualiseSignal(object):
         self.entries_list = entries_list
 
     def init_heatmap(self, bag_name, sig_g=2):
+        """
+        Plot heatmap of the signal
+        """
         b = bagreader(self.data_path + '/' + bag_name)
         data_sig = b.message_by_topic('/monitors_router/data')
         data_gps = b.message_by_topic('/gps/filtered')
@@ -98,10 +101,10 @@ class VisualiseSignal(object):
             df_gps_x.append(round(df_gps.latitude[idx] * 111139, 1))
             df_gps_y.append(round(df_gps.longitude[idx] * 111139, 1))
 
-        max_x = int(max(df_gps_x))
-        min_x = int(min(df_gps_x))
-        max_y = int(max(df_gps_y))
-        min_y = int(min(df_gps_y))
+        max_x = round(max(df_gps_x))
+        min_x = round(min(df_gps_x))
+        max_y = round(max(df_gps_y))
+        min_y = round(min(df_gps_y))
         data_sig2 = np.zeros((max_x - min_x,
                               max_y - min_y))
 
@@ -120,9 +123,9 @@ class VisualiseSignal(object):
             for j, y in enumerate(df_gps_y):
                 if i == j:
                     if sig[i] == self.INVALID_SIG:
-                        data_sig2[int(x) - min_x - 1, int(y) - min_y - 1] = 0
+                        data_sig2[round(x) - min_x - 1, round(y) - min_y - 1] = 0
                     else:
-                        data_sig2[int(x) - min_x - 1, int(y) - min_y - 1] = sig[i]
+                        data_sig2[round(x) - min_x - 1, round(y) - min_y - 1] = sig[i]
                     break
 
         df_ht = pd.DataFrame(data_sig2,
@@ -140,7 +143,7 @@ class VisualiseSignal(object):
         if self.show_cbar:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
             self.ax = sea.heatmap(df_ht, cbar=True, vmin=self.sig_min, vmax=self.sig_max, rasterized=True)
-            self.show_cbar = False
+            self.show_cbar = True
         else:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
             self.ax = sea.heatmap(df_ht, cbar=False, vmin=self.sig_min, vmax=self.sig_max, rasterized=True)
@@ -165,6 +168,11 @@ class VisualiseSignal(object):
 
         if self.display:
             plt.show()
+
+        # Clear the current axes.
+        plt.cla()
+        # Clear the current figure.
+        plt.clf()
 
         del [df_ht]
 
