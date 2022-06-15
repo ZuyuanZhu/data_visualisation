@@ -11,7 +11,7 @@ class VisualiseCARV2(object):
     A class to visualise the Call_A_Robot device V2 collected from Hatchgate
     """
 
-    def __init__(self, data_path, data_name, start_time, time_end, fig, ax):
+    def __init__(self, data_path, data_name, start_time, time_end, fig=None, ax=None):
         self.data_path = data_path
         self.data_name = data_name
         self.data = None
@@ -22,6 +22,7 @@ class VisualiseCARV2(object):
         self.status = []
         self.show_cbar = True
         self.invalid_gps = -1.0
+        self.gps_y_bound = 48692   # limit the V2 gps to the Hatchgate west, excluding the signal from the east side
 
         self.display = True
 
@@ -48,9 +49,10 @@ class VisualiseCARV2(object):
             lis = line.split(",")
             if not lis[4] and self.time_start <= int(lis[1]) <= self.time_end \
                     and float(lis[7]) != self.invalid_gps and float(lis[8]) != self.invalid_gps and float(lis[8]) > 0:
-                self.gps_x.append(round(float(lis[7]) * 111139, 1))
-                self.gps_y.append(round(float(lis[8]) * 111139, 1))
-                self.status.append(int(lis[5]))
+                if round(float(lis[8]) * 111139, 1) < self.gps_y_bound:
+                    self.gps_x.append(round(float(lis[7]) * 111139, 1))
+                    self.gps_y.append(round(float(lis[8]) * 111139, 1))
+                    self.status.append(int(lis[5]))
 
         max_x = round(max(self.gps_x))
         min_x = round(min(self.gps_x))
