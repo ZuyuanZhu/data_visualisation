@@ -11,13 +11,38 @@ from fnmatch import fnmatchcase
 from matplotlib import colors
 
 
+def match_time(timea, timeb):
+    """
+    timea and timeb are nx1 array of ROS time stamps: df.Time.
+    Find the nearest time stamps between the two time arrays
+    """
+    if len(timea) > len(timeb):
+        time = timea
+        timea = timeb
+        timeb = time
+
+    match_idx = []
+    idx = 0
+    for i in range(len(timea)):
+        dist_min = 99999
+        for j in range(idx + 1, len(timeb)):
+            if dist_min > (abs(timea[i] - timeb[j])):
+                dist_min = abs(timea[i] - timeb[j])
+                idx = j
+            else:
+                break
+        match_idx.append(idx)
+
+    return match_idx
+
+
 class VisualiseSignal(object):
     """
     A class to visualise the data for GPS,
     Mobile Signal Strength from rosbag collected from Hatchgate
     """
 
-    def __init__(self, data_path_, file_type_, bag_name):
+    def __init__(self, data_path_, file_type_, bag_name, fig=None, ax=None):
         self.entries_list = None
         self.data_path = data_path_
         self.file_type = file_type_
@@ -32,7 +57,12 @@ class VisualiseSignal(object):
         self.heatmap_columns = None
 
         self.show_cbar = True
-        self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 9), sharex=False, sharey=False)
+        if fig:
+            self.fig = fig
+        if ax:
+            self.ax = ax
+        else:
+            self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 9), sharex=False, sharey=False)
         # self.fig3, self.ax3 = plt.subplots(1, 1, figsize=(16, 6), sharex=False, sharey=False)
 
         # bag_name = 'bag1.bag'
@@ -48,8 +78,10 @@ class VisualiseSignal(object):
                 self.sig_max = 0
                 self.sig_min = -20
             self.init_heatmap(self.bag_name, g)
-            plt.close('all')
-            self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 16), sharex=False, sharey=False)
+
+    @staticmethod
+    def close_fig():
+        plt.close('all')
 
     def merge_bag(self):
         """
@@ -100,7 +132,7 @@ class VisualiseSignal(object):
         df_signal = pd.read_csv(data_sig)
         df_gps = pd.read_csv(data_gps)
 
-        match_idx = self.match_time(df_signal.Time, df_gps.Time)
+        match_idx = match_time(df_signal.Time, df_gps.Time)
 
         df_gps_x = []
         df_gps_y = []
@@ -162,6 +194,9 @@ class VisualiseSignal(object):
         plt.rcParams.update({'font.size': 22})
         self.ax.set(xlabel='Node pose x', ylabel='Node pose y')
 
+        # force background to white
+        self.ax.set(facecolor="white")
+
         # y axis upside down
         self.ax.invert_yaxis()
 
@@ -213,27 +248,3 @@ class VisualiseSignal(object):
         plt.clf()
 
         del [df_ht]
-
-    def match_time(self, timea, timeb):
-        """
-        timea and timeb are nx1 array of ROS time stamps: df.Time.
-        Find the nearest time stamps between the two time arrays
-        """
-        if len(timea) > len(timeb):
-            time = timea
-            timea = timeb
-            timeb = time
-
-        match_idx = []
-        idx = 0
-        for i in range(len(timea)):
-            dist_min = 99999
-            for j in range(idx + 1, len(timeb)):
-                if dist_min > (abs(timea[i] - timeb[j])):
-                    dist_min = abs(timea[i] - timeb[j])
-                    idx = j
-                else:
-                    break
-            match_idx.append(idx)
-
-        return match_idx

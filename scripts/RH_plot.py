@@ -17,5 +17,6 @@ if __name__ == "__main__":
     file_type = 'bag'
     outputbag = 'merge_bag.bag'
     vis = data_visualisation.visualise_signal.VisualiseSignal(data_path, file_type, outputbag)
-    generations = [2]    # [2, 3, 4]
+    generations = [2, 3, 4]
     vis.plot(generations)
+    vis.close_fig()
