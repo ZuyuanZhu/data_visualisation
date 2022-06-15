@@ -13,7 +13,7 @@ from matplotlib import colors
 
 class VisualiseSignal(object):
     """
-    A class to visualise the data visualisation for GPS,
+    A class to visualise the data for GPS,
     Mobile Signal Strength from rosbag collected from Hatchgate
     """
 
@@ -23,6 +23,8 @@ class VisualiseSignal(object):
         self.file_type = file_type_
         self.bag_name = bag_name
         self.INVALID_SIG = -999
+        self.sig_max = 0
+        self.sig_min = 0
         self.display = False
 
         self.heatmap_data = None
@@ -36,7 +38,9 @@ class VisualiseSignal(object):
         # bag_name = 'bag1.bag'
         if not os.path.exists(self.data_path + '/' + self.bag_name):
             self.merge_bag()
-        for g in [2]:     # [2, 3, 4, 5]
+
+    def plot(self, generations):
+        for g in generations:     # [2, 3, 4, 5]
             if g < 4:
                 self.sig_max = -70
                 self.sig_min = -140
@@ -122,22 +126,6 @@ class VisualiseSignal(object):
         else:
             raise "Signal generation should be: 2, 3, 4, or 5"
 
-        # gca stands for 'get current axis'
-        ax = plt.gca()
-
-        G2 = df_signal.data_3.replace(to_replace=-999, value=-140)
-        G3 = df_signal.data_4.replace(to_replace=-999, value=-140)
-        G4 = df_signal.data_5.replace(to_replace=-999, value=-140)
-        G2.plot(kind='line', ax=ax, xlabel='Time stamp', ylabel='Signal strength', label="2G")
-        G3.plot(kind='line', ax=ax, xlabel='Time stamp', ylabel='Signal strength', label="3G")
-        G4.plot(kind='line', ax=ax, xlabel='Time stamp', ylabel='Signal strength', label="4G")
-        plt.legend(loc="best")
-        plt.xlabel("Time stamp", fontsize=16, fontweight='bold')
-        plt.ylabel("Signal strength (dBm)", fontsize=16, fontweight='bold')
-        ax.tick_params(axis='both', labelsize=16)
-        # plt.show()
-        plt.savefig(self.data_path + "/figs/Signal" + ".pdf")
-
         for i, x in enumerate(df_gps_x):
             for j, y in enumerate(df_gps_y):
                 if i == j:
@@ -189,6 +177,35 @@ class VisualiseSignal(object):
 
         if self.display:
             plt.show()
+
+        # Clear the current axes.
+        plt.cla()
+        # Clear the current figure.
+        plt.clf()
+
+        # plot signal line
+        # gca stands for 'get current axis'
+        ax = plt.gca()
+
+        # force background to white
+        ax.set(facecolor="white")
+        # ax.patch.set_alpha(1.0)
+
+        G2 = df_signal.data_3.replace(to_replace=-999, value=-140)
+        G3 = df_signal.data_4.replace(to_replace=-999, value=-140)
+        G4 = df_signal.data_5.replace(to_replace=-999, value=-140)
+        G2.plot(kind='line', ax=ax, xlabel='Time stamp', ylabel='Signal strength', label="2G")
+        G3.plot(kind='line', ax=ax, xlabel='Time stamp', ylabel='Signal strength', label="3G")
+        G4.plot(kind='line', ax=ax, xlabel='Time stamp', ylabel='Signal strength', label="4G")
+        plt.legend(loc="best")
+        plt.xlabel("Time stamp", fontsize=16, fontweight='bold')
+        plt.ylabel("Signal strength (dBm)", fontsize=16, fontweight='bold')
+        ax.tick_params(axis='both', labelsize=16)
+        # plt.show()
+
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(self.data_path + "/figs/Signal" + ".pdf")
 
         # Clear the current axes.
         plt.cla()
