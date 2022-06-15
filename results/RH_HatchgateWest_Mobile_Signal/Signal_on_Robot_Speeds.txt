@@ -49,9 +49,9 @@ RUN 5 row 93-94 high speed(0.4); V1 antenna high
 Thu, 09 Jun 2022 15:11:02 GMT
 Thu, 09 Jun 2022 15:16:02 GMT
 1654787462.95582
-1654787762.95582
+1654787582.95582
 
-rosbag filter merge_bag.bag merge_bag_run_5.bag "t.to_sec() >= 1654787462 and t.to_sec() <= 1654787682"
+rosbag filter merge_bag.bag merge_bag_run_5.bag "t.to_sec() >= 1654787462 and t.to_sec() <= 1654787582"
 
 
 RUN 6 row 94-95 middle speed; V1 antenna high
@@ -81,10 +81,11 @@ RUN 8 row 93-94 fast speed(0.7); V1 antenna low
 
 Thu, 09 Jun 2022 15:25:00 GMT
 Thu, 09 Jun 2022 15:29:00 GMT
-1654788250.95582
-1654788540.95582
+1654788210.95582
+1654788365.95582
 
-rosbag filter merge_bag.bag merge_bag_run_8.bag "t.to_sec() >= 1654788250 and t.to_sec() <= 1654788540"
+rosbag filter merge_bag.bag merge_bag_run_8.bag "t.to_sec() >= 1654788210 and t.to_sec() <= 1654788365"
+
 
 
 

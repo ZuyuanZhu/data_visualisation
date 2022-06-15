@@ -30,7 +30,7 @@ class VisualiseSignal(object):
         self.heatmap_columns = None
 
         self.show_cbar = True
-        self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 16), sharex=False, sharey=False)
+        self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 9), sharex=False, sharey=False)
         # self.fig3, self.ax3 = plt.subplots(1, 1, figsize=(16, 6), sharex=False, sharey=False)
 
         # bag_name = 'bag1.bag'
@@ -122,6 +122,22 @@ class VisualiseSignal(object):
         else:
             raise "Signal generation should be: 2, 3, 4, or 5"
 
+        # gca stands for 'get current axis'
+        ax = plt.gca()
+
+        G2 = df_signal.data_3.replace(to_replace=-999, value=-140)
+        G3 = df_signal.data_4.replace(to_replace=-999, value=-140)
+        G4 = df_signal.data_5.replace(to_replace=-999, value=-140)
+        G2.plot(kind='line', ax=ax, xlabel='Time stamp', ylabel='Signal strength', label="2G")
+        G3.plot(kind='line', ax=ax, xlabel='Time stamp', ylabel='Signal strength', label="3G")
+        G4.plot(kind='line', ax=ax, xlabel='Time stamp', ylabel='Signal strength', label="4G")
+        plt.legend(loc="best")
+        plt.xlabel("Time stamp", fontsize=16, fontweight='bold')
+        plt.ylabel("Signal strength (dBm)", fontsize=16, fontweight='bold')
+        ax.tick_params(axis='both', labelsize=16)
+        # plt.show()
+        plt.savefig(self.data_path + "/figs/Signal" + ".pdf")
+
         for i, x in enumerate(df_gps_x):
             for j, y in enumerate(df_gps_y):
                 if i == j:
@@ -169,7 +185,7 @@ class VisualiseSignal(object):
 
         self.fig.tight_layout()
 
-        self.fig.savefig(self.data_path + "/%iG_Signal_Heatmap" % sig_g + ".pdf")
+        self.fig.savefig(self.data_path + "/figs/%iG_Signal_Heatmap" % sig_g + ".pdf")
 
         if self.display:
             plt.show()

@@ -11,7 +11,7 @@
 import data_visualisation.visualise_signal
 
 if __name__ == "__main__":
-    folder = "robot1_R91_R96"
+    folder = "robot2_bags"
     data_folder_path = "/home/zuyuan/rasberry_ws/src/RASberry/rasberry_core/new_tmule/"
     data_path = data_folder_path + folder
     file_type = 'bag'
