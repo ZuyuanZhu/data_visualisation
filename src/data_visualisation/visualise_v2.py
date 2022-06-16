@@ -79,26 +79,26 @@ class VisualiseCARV2(object):
 
         sea.set(font_scale=1.6)
 
-        myColors = ((0.8, 0.0, 0.0, 1.0), (0.0, 0.8, 0.0, 1.0), (0.0, 0.0, 0.8, 1.0))
+        myColors = ((0.8, 0.0, 0.0, 1.0), (0.0, 0.0, 0.8, 1.0))
         cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
 
 
         if self.show_cbar:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
             self.ax = sea.heatmap(df_ht, cmap=cmap, mask=(df_ht == 0), square=True,
-                                  rasterized=True, cbar_kws={"shrink": 0.4})
+                                  rasterized=True, cbar_kws={"shrink": 0.8})
             self.show_cbar = False
         else:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
             self.ax = sea.heatmap(df_ht, cmap=cmap, mask=(df_ht == 0), square=True,
-                                  rasterized=True, cbar_kws={"shrink": 0.4})
+                                  rasterized=True, cbar_kws={"shrink": 0.8})
 
         self.ax.tick_params(colors='black', left=False, bottom=False)
 
         # Manually specify colorbar labelling after it's been generated
         colorbar = self.ax.collections[0].colorbar
-        colorbar.set_ticks([-0.667, 0, 0.667])
-        colorbar.set_ticklabels(['B', 'A', 'C'])
+        colorbar.set_ticks([10.275, 10.75])
+        colorbar.set_ticklabels(["Status 10", "Status 11"])
         plt.rcParams.update({'font.size': 16})
 
         # y axis upside down

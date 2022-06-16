@@ -30,4 +30,7 @@ if __name__ == "__main__":
     data_name = 'car_filtered.log'
     start_time = 1654595910
     end_time = 1654784162
-    vis = data_visualisation.visualise_v2_and_signal.VisualiseCARV2(data_path, data_name, start_time, end_time, fig, ax)
+    vis2 = data_visualisation.visualise_v2_and_signal.VisualiseCARV2(data_path, data_name,
+                                                                     start_time, end_time,
+                                                                     vis.df_gps_x, vis.df_gps_y,
+                                                                     fig, ax)
