@@ -16,7 +16,7 @@ import rasberry_des.config_utils_sim
 
 class InitTopoMap(object):
 
-    def __init__(self, config_dir_, config_file_name_):
+    def __init__(self, config_dir_, config_file_name_, map_dir_, map_file_name_):
         self.config_file = config_dir_ + config_file_name_
         self.config_params = rasberry_des.config_utils_sim.get_mimic_des_params(self.config_file)
 
@@ -40,8 +40,8 @@ class InitTopoMap(object):
         self.config_dir = config_dir_
         self.config_file_name = config_file_name_
         self.config_file = self.config_dir + self.config_file_name
-        self.map_dir = '/home/zuyuan/rasberry_ws/src/RASberry/rasberry_des/maps/hatchgate/testing/'
-        self.map_file_name = 'hg_south_logistics.tmap2'
+        self.map_dir = map_dir_
+        self.map_file_name = map_file_name_
         self.topo_map2_file = os.path.join(os.path.expanduser("~"), self.map_dir, self.map_file_name)
         self.single_track = []
         self.VERBOSE = True
@@ -63,9 +63,11 @@ if __name__ == "__main__":
     data_folder_path = "/home/zuyuan/rasberry_ws/src/RASberry/rasberry_core/new_tmule/"
     data_path = data_folder_path + folder
 
+    map_dir = '/home/zuyuan/rasberry_ws/src/RASberry/rasberry_core/config/site_files/clockhouse/hatchgate_west/transportation'
+    map_file_name = 'tmap.tmap2'
     config_dir = '/home/zuyuan/rasberry_ws/src/RASberry/rasberry_des/config/toptimise_kent/'
-    config_file_name = 'simpy_clockhouse_hatchgate_logistics_south_simple.yaml'
-    init_map = InitTopoMap(config_dir, config_file_name)
+    config_file_name = 'RH_clockhouse_hatchgate_west.yaml'
+    init_map = InitTopoMap(config_dir, config_file_name, map_dir, map_file_name)
     tmap = init_map.get_map()
 
 
@@ -73,9 +75,9 @@ if __name__ == "__main__":
     fig = vis_map.fig
     ax = vis_map.ax
 
-    file_type = 'bag'
-    outputbag = 'merge_bag.bag'
-    vis = data_visualisation.visualise_signal.VisualiseSignal(data_path, file_type, outputbag, fig, ax)
-    generations = [2, 3, 4]
-    vis.plot(generations)
-    vis.close_fig()
+    # file_type = 'bag'
+    # outputbag = 'merge_bag.bag'
+    # vis = data_visualisation.visualise_signal.VisualiseSignal(data_path, file_type, outputbag, fig, ax)
+    # generations = [2, 3, 4]
+    # vis.plot(generations)
+    # vis.close_fig()
