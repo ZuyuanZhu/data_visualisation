@@ -7,8 +7,7 @@ import numpy as np
 import os
 from rosbag import Bag
 import os.path
-from fnmatch import fnmatchcase
-from matplotlib import colors
+import data_visualisation.visualise_map
 
 
 def match_time(timea, timeb):
@@ -42,11 +41,15 @@ class VisualiseSignal(object):
     Mobile Signal Strength from rosbag collected from Hatchgate
     """
 
-    def __init__(self, data_path_, file_type_, bag_name, fig=None, ax=None):
+    def __init__(self, data_path_, file_type_, bag_name, tmap2, fig=None, ax=None):
         self.entries_list = None
         self.data_path = data_path_
         self.file_type = file_type_
         self.bag_name = bag_name
+
+        self.tmap2 = tmap2
+        self.vis_map = None
+
         self.INVALID_SIG = -999
         self.sig_max = 0
         self.sig_min = 0
@@ -63,9 +66,9 @@ class VisualiseSignal(object):
             self.ax = ax
         else:
             self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 9), sharex=False, sharey=False)
-        # self.fig3, self.ax3 = plt.subplots(1, 1, figsize=(16, 6), sharex=False, sharey=False)
+            # self.fig = plt.figure(figsize=(16, 9), dpi=100)
+            # self.ax = self.fig.add_subplot(111, frameon=True)
 
-        # bag_name = 'bag1.bag'
         if not os.path.exists(self.data_path + '/' + self.bag_name):
             self.merge_bag()
 
@@ -179,15 +182,9 @@ class VisualiseSignal(object):
 
         sea.set(font_scale=1.6)
 
-        if self.show_cbar:
-            # get sharp grid back by removing rasterized=True, and save fig as svg format
-            self.ax = sea.heatmap(df_ht, cbar=True, mask=(df_ht == 0),
-                                  vmin=self.sig_min, vmax=self.sig_max, square=True, rasterized=True)
-            self.show_cbar = True
-        else:
-            # get sharp grid back by removing rasterized=True, and save fig as svg format
-            self.ax = sea.heatmap(df_ht, cbar=False, mask=(df_ht == 0),
-                                  vmin=self.sig_min, vmax=self.sig_max, square=True, rasterized=True)
+        # get sharp grid back by removing rasterized=True, and save fig as svg format
+        self.ax = sea.heatmap(df_ht, cbar=True, mask=(df_ht == 0),
+                              vmin=self.sig_min, vmax=self.sig_max, square=True, rasterized=True)
 
         self.ax.tick_params(colors='black', left=False, bottom=False)
 
@@ -195,7 +192,7 @@ class VisualiseSignal(object):
         self.ax.set(xlabel='Node pose x', ylabel='Node pose y')
 
         # force background to white
-        self.ax.set(facecolor="white")
+        # self.ax.set(facecolor="white")
 
         # y axis upside down
         self.ax.invert_yaxis()
@@ -204,7 +201,10 @@ class VisualiseSignal(object):
         self.ax.set_xlabel('Longitude (m)', fontsize=16)
         self.ax.set_ylabel('Latitude (m)', fontsize=16)
 
-        self.fig.canvas.draw()
+        # self.fig.canvas.draw()
+
+        # topomap visualisation
+        self.vis_map = data_visualisation.visualise_map.VisualiseMap(self.tmap2, self.data_path, self.fig, self.ax)
 
         self.fig.tight_layout()
 

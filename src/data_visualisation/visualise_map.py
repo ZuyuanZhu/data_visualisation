@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import rospy
 import datetime
 from yaml import safe_load
+import seaborn as sea
 
 
 class LoadMap(object):
@@ -130,12 +131,13 @@ class VisualiseMap(object):
         if fig:
             self.fig = fig
         else:
-            self.fig = plt.figure(figsize=(16, 10), dpi=100)
+            # self.fig = plt.figure(figsize=(16, 10), dpi=100)
+            self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 9), sharex=False, sharey=False)
 
         if ax:
             self.ax = ax
-        else:
-            self.ax = self.fig.add_subplot(111, frameon=True)
+        # else:
+        #     self.ax = self.fig.add_subplot(111, frameon=True)
 
         self.font = {'family': 'serif', 'color': 'red', 'weight': 'bold', 'size': 9, }
 
@@ -256,16 +258,25 @@ class VisualiseMap(object):
                                                  linestyle="none")[0])
 
         # local storages
-        self.static_lines.append(self.ax.plot(local_storage_x, local_storage_y,
-                                                 color="black", marker="s", markersize=12,
-                                                 markeredgecolor="r", linestyle="none")[0])
+        # self.static_lines.append(self.ax.plot(local_storage_x, local_storage_y,
+        #                                          color="black", marker="s", markersize=12,
+        #                                          markeredgecolor="r", linestyle="none")[0])
 
-        self.ax.tick_params(axis='x', labelsize=18)
-        self.ax.tick_params(axis='y', labelsize=18)
+        # plt.show()
+
+        self.ax.tick_params(axis='x', labelsize=9)
+        self.ax.tick_params(axis='y', labelsize=9)
+
+        # y axis upside down
+        # self.ax.invert_yaxis()
+        # for static_line in self.static_lines:
+        #     # self.ax.add_line(static_line)
+        #     # static_line.plot(kind='line', ax=self.ax, label="Map")
+        #     sea.lineplot(data=static_line, linewidth=self.linewidth, ax=self.ax)
 
         self.fig.canvas.draw()
         if self.save_fig:
             self.fig.savefig(
-                self.fig_name_base + datetime.datetime.now().isoformat().replace(":", "_") + ".pdf")
+                self.fig_name_base + '/' + datetime.datetime.now().isoformat().replace(":", "_") + ".pdf")
 
         return self.static_lines

@@ -68,16 +68,19 @@ if __name__ == "__main__":
     config_dir = '/home/zuyuan/rasberry_ws/src/RASberry/rasberry_des/config/toptimise_kent/'
     config_file_name = 'RH_clockhouse_hatchgate_west.yaml'
     init_map = InitTopoMap(config_dir, config_file_name, map_dir, map_file_name)
-    tmap = init_map.get_map()
+    tmap2 = init_map.get_map()
 
 
-    vis_map = data_visualisation.visualise_map.VisualiseMap(tmap, data_path)
-    fig = vis_map.fig
-    ax = vis_map.ax
+    # vis_map = data_visualisation.visualise_map.VisualiseMap(tmap2, data_path)
+    # fig = vis_map.fig
+    # ax = vis_map.ax
 
-    # file_type = 'bag'
-    # outputbag = 'merge_bag.bag'
-    # vis = data_visualisation.visualise_signal.VisualiseSignal(data_path, file_type, outputbag, fig, ax)
-    # generations = [2, 3, 4]
-    # vis.plot(generations)
-    # vis.close_fig()
+    file_type = 'bag'
+    outputbag = 'merge_bag.bag'
+    vis = data_visualisation.visualise_signal.VisualiseSignal(data_path, file_type, outputbag, tmap2)
+    # fig = vis.fig
+    # ax = vis.ax
+    # vis_map = data_visualisation.visualise_map.VisualiseMap(tmap, data_path, fig, ax)
+    generations = [2]
+    vis.plot(generations)
+    vis.close_fig()
