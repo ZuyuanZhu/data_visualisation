@@ -41,7 +41,7 @@ class VisualiseSignal(object):
     Mobile Signal Strength from rosbag collected from Hatchgate
     """
 
-    def __init__(self, data_path_, file_type_, bag_name, tmap2, fig=None, ax=None):
+    def __init__(self, data_path_, file_type_, bag_name, tmap2=None, fig=None, ax=None):
         self.entries_list = None
         self.data_path = data_path_
         self.file_type = file_type_
@@ -203,9 +203,9 @@ class VisualiseSignal(object):
 
         # self.fig.canvas.draw()
 
-        # topomap visualisation
-        self.vis_map = data_visualisation.visualise_map.VisualiseMap(self.tmap2, self.data_path, self.fig, self.ax)
-
+        # # topomap visualisation
+        # self.vis_map = data_visualisation.visualise_map.VisualiseMap(self.tmap2, self.data_path, self.fig, self.ax)
+        #
         self.fig.tight_layout()
 
         self.fig.savefig(self.data_path + "/figs/%iG_Signal_Heatmap" % sig_g + ".pdf")
