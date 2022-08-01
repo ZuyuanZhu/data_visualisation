@@ -32,7 +32,7 @@ def match_time(timea, timeb):
                 break
         match_idx.append(idx)
 
-    return match_idx
+    return match_idx, timeb[min(match_idx)], timeb[max(match_idx)]
 
 
 class VisualiseSignal(object):
