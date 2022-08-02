@@ -67,8 +67,8 @@ class VisualiseSignal(object):
     def plot(self, generations):
         for g in generations:  # [2, 3, 4, 5]
             if g < 4:
-                self.sig_max = -70
-                self.sig_min = -140
+                self.sig_max = 110
+                self.sig_min = 50
             else:
                 self.sig_max = 0
                 self.sig_min = -20
@@ -166,7 +166,7 @@ class VisualiseSignal(object):
         for i, x in enumerate(self.df_robot_gps["x"]):
             for j, y in enumerate(self.df_robot_gps["y"]):
                 if i == j:
-                    data_sig2[int(math.ceil(x)) - min_x - 1, int(math.ceil(y)) - min_y - 1] = -90
+                    data_sig2[int(math.ceil(x)) - min_x - 1, int(math.ceil(y)) - min_y - 1] = self.sig_max * 0.8
                     break
 
         df_ht = pd.DataFrame(data_sig2,
@@ -221,17 +221,18 @@ class VisualiseCARV2(object):
     A class to visualise the Call_A_Robot device V2 collected from Hatchgate
     """
 
-    def __init__(self, data_path, data_name, start_time, time_end, df_gps_x, df_gps_y, fig, ax):
+    def __init__(self, user, data_path, data_name, start_time, time_end, df_gps_x, df_gps_y, fig, ax):
+        self.user = user
         self.data_path = data_path
         self.data_name = data_name
         self.data = None
         self.time_start = start_time  # Unix time
         self.time_end = time_end
-        self.gps_x = []
-        self.gps_y = []
+        self.gps_x = {}
+        self.gps_y = {}
         self.df_gps_x = df_gps_x  # gps boundary from robot's trajectory
         self.df_gps_y = df_gps_y
-        self.status = []
+        self.status = {}
         self.show_cbar = True
         self.invalid_gps = -1.0
         self.gps_y_bound = 9999999999  # limit the V2 gps to the specified side when necessary
@@ -246,7 +247,7 @@ class VisualiseCARV2(object):
             self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 8), sharex=False, sharey=False)
 
         self.get_data()
-        self.plot_ht()
+        self.plot_ht(self.user)
 
     def get_data(self):
         """read data from the log file"""
@@ -256,67 +257,91 @@ class VisualiseCARV2(object):
             except yaml.YAMLError as exc:
                 print(exc)
 
-    def plot_ht(self):
+    def plot_ht(self, user):
+        #TODO: seperate STD based on their names
+
+        data_status = {}
+        for u in user:
+            self.gps_x[u] = []
+            self.gps_y[u] = []
+            self.status[u] = []
+            data_status[u] = None
         for line in self.data:
             lis = line.split(",")
             if not lis[4] and self.time_start <= int(lis[1]) <= self.time_end \
                     and float(lis[7]) != self.invalid_gps and float(lis[8]) != self.invalid_gps and float(lis[8]) > 0:
                 if round(float(lis[8]) * GPS2COOR, 1) < self.gps_y_bound:
-                    self.gps_x.append(round(float(lis[7]) * GPS2COOR, 1))
-                    self.gps_y.append(round(float(lis[8]) * GPS2COOR, 1))
-                    self.status.append(int(lis[5]))
+                    u = lis[3]
+                    self.gps_x[u].append(round(float(lis[7]) * GPS2COOR, 1))
+                    self.gps_y[u].append(round(float(lis[8]) * GPS2COOR, 1))
+                    self.status[u].append(int(u[-2:]))
 
         robot_max_x = math.ceil(max(self.df_gps_x))
         robot_min_x = math.floor(min(self.df_gps_x))
         robot_max_y = math.ceil(max(self.df_gps_y))
         robot_min_y = math.floor(min(self.df_gps_y))
 
-        data_status = np.zeros((robot_max_x - robot_min_x,
-                                robot_max_y - robot_min_y))
-
-        for i, x in enumerate(self.gps_x):
-            # if picker is outside of the area of robot, ignore
-            if int(math.ceil(x)) > robot_max_x:
-                continue
-            for j, y in enumerate(self.gps_y):
+        for u in self.user:
+            data_status[u] = np.zeros((robot_max_x - robot_min_x,
+                                       robot_max_y - robot_min_y))
+            for i, x in enumerate(self.gps_x[u]):
                 # if picker is outside of the area of robot, ignore
-                if int(math.ceil(y)) > robot_max_y:
+                if int(math.ceil(x)) > robot_max_x:
                     continue
-                if i == j:
-                    data_status[int(math.ceil(x)) - robot_min_x - 1, int(math.ceil(y)) - robot_min_y - 1] = -70
-                    break
+                for j, y in enumerate(self.gps_y[u]):
+                    # if picker is outside of the area of robot, ignore
+                    if int(math.ceil(y)) > robot_max_y:
+                        continue
+                    if i == j:
+                        data_status[u][int(math.ceil(x)) - robot_min_x - 1,
+                                       int(math.ceil(y)) - robot_min_y - 1] = self.status[u][i]
+                        break
 
-        df_ht = pd.DataFrame(data_status,
-                             index=np.linspace(robot_min_x,
-                                               robot_max_x - 1,
-                                               robot_max_x - robot_min_x,
-                                               dtype='int'),
-                             columns=np.linspace(robot_min_y,
-                                                 robot_max_y - 1,
-                                                 robot_max_y - robot_min_y,
-                                                 dtype='int'))
+        df_ht = {}
+        # todo debug
+        # self.user = [self.user[0]]
+        for u in self.user:
+            df_ht[u] = pd.DataFrame(data_status[u],
+                                    index=np.linspace(robot_min_x,
+                                                      robot_max_x - 1,
+                                                      robot_max_x - robot_min_x,
+                                                      dtype='int'),
+                                    columns=np.linspace(robot_min_y,
+                                                        robot_max_y - 1,
+                                                        robot_max_y - robot_min_y,
+                                                        dtype='int'))
 
         sea.set(font_scale=1.6)
 
-        myColors = ((0.9, 0.0, 0.0, 1.0), (0.0, 0.0, 0.8, 1.0))
+        # red, blue, yellow
+        myColors = ((0.0, 0.0, 0.8, 1.0), (0.8, 0.8, 0, 1.0), (0.9, 0.0, 0.0, 1.0))
         cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
 
         if self.show_cbar:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
-            self.ax = sea.heatmap(df_ht, cmap=cmap, mask=(df_ht == 0), square=True,
+            # generate cbar only once
+            self.ax = sea.heatmap(df_ht[self.user[0]], cmap=cmap, mask=(df_ht[self.user[0]] == 0), square=True,
                                   rasterized=True, cbar_kws={"shrink": 0.1})
+            for u in self.user[1:]:
+                self.ax = sea.heatmap(df_ht[u], cmap=cmap, mask=(df_ht[u] == 0), square=True,
+                                      rasterized=True, cbar=False)
             self.show_cbar = False
         else:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
-            self.ax = sea.heatmap(df_ht, cmap=cmap, mask=(df_ht == 0), square=True,
-                                  rasterized=True, cbar_kws={"shrink": 0.1})
+            for u in self.user:
+                self.ax = sea.heatmap(df_ht[u], cmap=cmap, mask=(df_ht[u] == 0), square=True,
+                                      rasterized=True, cbar=False)
 
         self.ax.tick_params(colors='black', left=False, bottom=False)
 
         # Manually specify colorbar labelling after it's been generated
         colorbar = self.ax.collections[1].colorbar
-        colorbar.set_ticks([-73.25, -66.75])
-        colorbar.set_ticklabels(["Robot", "STD"])
+        colorbar.set_ticks([72.75, 63.25, 68.05])
+        # user_idx = []
+        # for u in self.user:
+        #     user_idx.append(u[-2:])
+        tick_labels = ["Robot_024"] + self.user
+        colorbar.set_ticklabels(tick_labels)
         plt.rcParams.update({'font.size': 16})
 
         # y axis upside down
@@ -330,7 +355,7 @@ class VisualiseCARV2(object):
 
         self.fig.tight_layout()
 
-        self.fig.savefig(self.data_path + "/figs/ROBOT_and_STDv2_Heatmap" + ".pdf")
+        self.fig.savefig(self.data_path + "/figs/ROBOT_and_STDv2_GPS_Heatmap" + ".pdf")
 
         if self.display:
             plt.show()

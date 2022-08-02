@@ -37,7 +37,12 @@ if __name__ == "__main__":
     data_name = 'car_GPS.log'
     start_time = 1658406816
     end_time = 1658412558
-    vis2 = data_visualisation.visualise_v2_and_robot_gps.VisualiseCARV2(data_path, data_name,
+    user = ['STD_v2_bcddc2cfcb68', 'STD_v2_246f284a6c94']
+    robot_gps_x = [56924293.0, 56923437.9]
+    robot_gps_y = [486343.8, 485823.1]
+
+    vis2 = data_visualisation.visualise_v2_and_robot_gps.VisualiseCARV2(user, data_path, data_name,
                                                                         start_time, end_time,
-                                                                        vis.df_robot_gps["x"], vis.df_robot_gps["y"],
+                                                                        # vis.df_robot_gps["x"], vis.df_robot_gps["y"],
+                                                                        robot_gps_x, robot_gps_y,
                                                                         fig, ax)
