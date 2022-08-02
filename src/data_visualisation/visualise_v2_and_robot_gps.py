@@ -1,3 +1,10 @@
+# GPS data of Smart-Trolley Devices are collected from https://lcas.lincoln.ac.uk/car/orders as the rosbags
+# collected from Hatchgate (July) failed to get the STD data. Could be caused by MQTT overload or poor signal
+# inside the Polytunnels.
+# Note: When rosbaging inside the polytunnels, double check both the robot and STD are publishing valid data to
+#       the server.
+
+
 import yaml
 import numpy as np
 import pandas as pd
@@ -14,14 +21,13 @@ from data_visualisation.visualise_signal import match_time
 import ast
 import math
 
-
+# parameter used to convert GPS to decimeter(1111390)/meters(111139)
 GPS2COOR = 1111390
 
 
 class VisualiseSignal(object):
     """
-    A class to visualise the data for GPS,
-    Mobile Signal Strength from rosbag collected from Hatchgate
+    A class to visualise the data for GPS
     """
 
     def __init__(self, data_path_, file_type_, bag_name, car_topic, robot_topic, fig=None, ax=None):
@@ -83,21 +89,22 @@ class VisualiseSignal(object):
         self.get_folder_files()
         with Bag(self.data_path + '/' + self.bag_name, 'w') as o:
             for ifile in self.entries_list:
-                ifile = self.data_path + '/' + ifile
-                matchedtopics = []
-                included_count = 0
-                skipped_count = 0
-                with Bag(ifile, 'r') as ib:
-                    for topic, msg, t in ib:
-                        # if any(fnmatchcase(topic, pattern) for pattern in topics):
-                        #     if topic not in matchedtopics:
-                        #         matchedtopics.append(topic)
-                        o.write(topic, msg, t)
-                        included_count += 1
-                        # else:
-                        #     skipped_count += 1
-                total_included_count += included_count
-                total_skipped_count += skipped_count
+                if self.file_type == ifile[-3:]:
+                    ifile = self.data_path + '/' + ifile
+                    # matchedtopics = []
+                    included_count = 0
+                    skipped_count = 0
+                    with Bag(ifile, 'r') as ib:
+                        for topic, msg, t in ib:
+                            # if any(fnmatchcase(topic, pattern) for pattern in topics):
+                            #     if topic not in matchedtopics:
+                            #         matchedtopics.append(topic)
+                            o.write(topic, msg, t)
+                            included_count += 1
+                            # else:
+                            #     skipped_count += 1
+                    total_included_count += included_count
+                    total_skipped_count += skipped_count
 
     def get_folder_files(self):
         entries_list = []
@@ -108,16 +115,16 @@ class VisualiseSignal(object):
         entries_list.sort()
         self.entries_list = entries_list
 
-    def get_car_gps(self, df_car_gps):
-        for line in df_car_gps.data:
-            lis = line.split(",")
-            if not lis[4] and self.time_start <= int(lis[1]) <= self.time_end \
-                    and float(lis[7]) != self.invalid_gps and float(lis[8]) != self.invalid_gps and float(
-                lis[8]) > 0:
-                if round(float(lis[8]) * GPS2COOR, 1) < self.gps_y_bound:
-                    self.gps_x.append(round(float(lis[7]) * GPS2COOR, 1))
-                    self.gps_y.append(round(float(lis[8]) * GPS2COOR, 1))
-                    self.status.append(int(lis[5]))
+    # def get_car_gps(self, df_car_gps):
+    #     for line in df_car_gps.data:
+    #         lis = line.split(",")
+    #         if not lis[4] and self.time_start <= int(lis[1]) <= self.time_end \
+    #                 and float(lis[7]) != self.invalid_gps and float(lis[8]) != self.invalid_gps and float(
+    #             lis[8]) > 0:
+    #             if round(float(lis[8]) * GPS2COOR, 1) < self.gps_y_bound:
+    #                 self.gps_x.append(round(float(lis[7]) * GPS2COOR, 1))
+    #                 self.gps_y.append(round(float(lis[8]) * GPS2COOR, 1))
+    #                 self.status.append(int(lis[5]))
 
     def init_heatmap(self, bag_name, sig_g=2):
         """
@@ -134,22 +141,6 @@ class VisualiseSignal(object):
         long_robot_diff = (max(df_robot_gps.longitude) - min(df_robot_gps.longitude)) * GPS2COOR
         lat_robot_diff = (max(df_robot_gps.latitude) - min(df_robot_gps.latitude)) * GPS2COOR
 
-        # store gps of each STD to a dict
-        # for gps in df_car_gps.data:
-        #     gps = ast.literal_eval(gps)
-        #     if not self.df_car_gps.get(gps["user"]):
-        #         self.df_car_gps[gps["user"]] = {}
-        #         self.df_car_gps[gps["user"]] = dict(x=[], y=[])
-        #     self.df_car_gps[gps["user"]]["x"].append(gps["lat"])
-        #     self.df_car_gps[gps["user"]]["y"].append(gps["long"])
-
-        # for user in self.df_car_gps.keys():
-        #     long_car_diff = (max(self.df_car_gps[user]["y"]) - min(self.df_car_gps[user]["y"])) * GPS2COOR
-        #     lat_car_diff = (max(self.df_car_gps[user]["x"]) - min(self.df_car_gps[user]["x"])) * GPS2COOR
-
-
-        # match_idx, min_t, max_t = match_time(df_car_gps.Time, df_robot_gps.Time)
-
         self.df_robot_gps["x"] = []
         self.df_robot_gps["y"] = []
         self.df_car_gps = {}
@@ -157,7 +148,6 @@ class VisualiseSignal(object):
         for idx in range(len(df_robot_gps.latitude)):
             self.df_robot_gps["x"].append(round(df_robot_gps.latitude[idx] * GPS2COOR, 1))
             self.df_robot_gps["y"].append(round(df_robot_gps.longitude[idx] * GPS2COOR, 1))
-
 
         max_x = math.ceil(max(self.df_robot_gps["x"]))
         min_x = math.floor(min(self.df_robot_gps["x"]))
@@ -176,17 +166,8 @@ class VisualiseSignal(object):
         for i, x in enumerate(self.df_robot_gps["x"]):
             for j, y in enumerate(self.df_robot_gps["y"]):
                 if i == j:
-                    data_sig2[int(math.ceil(x)) - min_x - 1, int(math.ceil(y)) - min_y - 1] = -140
+                    data_sig2[int(math.ceil(x)) - min_x - 1, int(math.ceil(y)) - min_y - 1] = -90
                     break
-        # STD GPS
-        # user_idx = 0
-        # for STD_user in self.df_car_gps.keys():
-        #     user_idx += 1
-        #     for i, x in enumerate(self.df_car_gps[STD_user]["x"]):
-        #         for j, y in enumerate(self.df_car_gps[STD_user]["y"]):
-        #             if i == j:
-        #                 data_sig2[int(math.ceil(x)) - min_x - 1, int(math.ceil(y)) - min_y - 1] = user_idx
-
 
         df_ht = pd.DataFrame(data_sig2,
                              index=np.linspace(min_x,
@@ -202,12 +183,12 @@ class VisualiseSignal(object):
 
         if self.show_cbar:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
-            self.ax = sea.heatmap(df_ht, cbar=True, mask=(df_ht == 0),
+            self.ax = sea.heatmap(df_ht, cbar=True, mask=(df_ht == 0), cmap='Reds',
                                   vmin=self.sig_min, vmax=self.sig_max, square=True, rasterized=True)
             self.show_cbar = True
         else:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
-            self.ax = sea.heatmap(df_ht, cbar=False, mask=(df_ht == 0),
+            self.ax = sea.heatmap(df_ht, cbar=False, mask=(df_ht == 0), cmap='Reds',
                                   vmin=self.sig_min, vmax=self.sig_max, square=True, rasterized=True)
 
         self.ax.tick_params(colors='black', left=False, bottom=False)
@@ -229,7 +210,7 @@ class VisualiseSignal(object):
 
         self.fig.tight_layout()
 
-        self.fig.savefig(self.data_path + "/figs/%iG_Signal_Heatmap" % sig_g + ".pdf")
+        self.fig.savefig(self.data_path + "/figs/robot_GPS_Heatmap" + ".pdf")
 
         if self.display:
             plt.show()
@@ -253,7 +234,7 @@ class VisualiseCARV2(object):
         self.status = []
         self.show_cbar = True
         self.invalid_gps = -1.0
-        self.gps_y_bound = 9999999999  # limit the V2 gps to the Hatchgate west, excluding the signal from the east side
+        self.gps_y_bound = 9999999999  # limit the V2 gps to the specified side when necessary
 
         self.display = True
 
@@ -285,10 +266,6 @@ class VisualiseCARV2(object):
                     self.gps_y.append(round(float(lis[8]) * GPS2COOR, 1))
                     self.status.append(int(lis[5]))
 
-        max_x = math.ceil(max(self.gps_x))
-        min_x = math.floor(min(self.gps_x))
-        max_y = math.ceil(max(self.gps_y))
-        min_y = math.floor(min(self.gps_y))
         robot_max_x = math.ceil(max(self.df_gps_x))
         robot_min_x = math.floor(min(self.df_gps_x))
         robot_max_y = math.ceil(max(self.df_gps_y))
@@ -321,7 +298,7 @@ class VisualiseCARV2(object):
 
         sea.set(font_scale=1.6)
 
-        myColors = ((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.8, 1.0))
+        myColors = ((0.9, 0.0, 0.0, 1.0), (0.0, 0.0, 0.8, 1.0))
         cmap = LinearSegmentedColormap.from_list('Custom', myColors, len(myColors))
 
         if self.show_cbar:
@@ -353,7 +330,7 @@ class VisualiseCARV2(object):
 
         self.fig.tight_layout()
 
-        self.fig.savefig(self.data_path + "/figs/V2_Signal_Heatmap" + ".pdf")
+        self.fig.savefig(self.data_path + "/figs/ROBOT_and_STDv2_Heatmap" + ".pdf")
 
         if self.display:
             plt.show()
