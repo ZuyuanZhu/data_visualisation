@@ -268,8 +268,17 @@ class VisualiseCARV2(object):
             data_status[u] = None
         for line in self.data:
             lis = line.split(",")
+            # if not lis[4] and self.time_start <= int(lis[1]) <= self.time_end \
+            #         and float(lis[7]) != self.invalid_gps and float(lis[8]) != self.invalid_gps and float(lis[8]) > 0:
+            #     if round(float(lis[8]) * GPS2COOR, 1) < self.gps_y_bound:
+            #         u = lis[3]
+            #         self.gps_x[u].append(round(float(lis[7]) * GPS2COOR, 1))
+            #         self.gps_y[u].append(round(float(lis[8]) * GPS2COOR, 1))
+            #         self.status[u].append(int(u[-2:]))
+
+            # riseholme
             if not lis[4] and self.time_start <= int(lis[1]) <= self.time_end \
-                    and float(lis[7]) != self.invalid_gps and float(lis[8]) != self.invalid_gps and float(lis[8]) > 0:
+                    and float(lis[7]) != self.invalid_gps and float(lis[8]) != self.invalid_gps and float(lis[8]) < 0:
                 if round(float(lis[8]) * GPS2COOR, 1) < self.gps_y_bound:
                     u = lis[3]
                     self.gps_x[u].append(round(float(lis[7]) * GPS2COOR, 1))
@@ -335,7 +344,7 @@ class VisualiseCARV2(object):
         self.ax.tick_params(colors='black', left=False, bottom=False)
 
         # Manually specify colorbar labelling after it's been generated
-        colorbar = self.ax.collections[1].colorbar
+        colorbar = self.ax.collections[0].colorbar
         colorbar.set_ticks([72.75, 63.25, 68.05])
         # user_idx = []
         # for u in self.user:
