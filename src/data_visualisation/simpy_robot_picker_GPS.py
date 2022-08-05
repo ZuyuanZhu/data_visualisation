@@ -20,6 +20,7 @@ import os.path
 from data_visualisation.visualise_signal import match_time
 import ast
 import math
+import simpy
 
 # parameter used to convert GPS to decimeter(1111390)/meters(111139)
 GPS2COOR = 1111390
@@ -115,17 +116,6 @@ class VisualiseSignal(object):
         entries_list.sort()
         self.entries_list = entries_list
 
-    # def get_car_gps(self, df_car_gps):
-    #     for line in df_car_gps.data:
-    #         lis = line.split(",")
-    #         if not lis[4] and self.time_start <= int(lis[1]) <= self.time_end \
-    #                 and float(lis[7]) != self.invalid_gps and float(lis[8]) != self.invalid_gps and float(
-    #             lis[8]) > 0:
-    #             if round(float(lis[8]) * GPS2COOR, 1) < self.gps_y_bound:
-    #                 self.gps_x.append(round(float(lis[7]) * GPS2COOR, 1))
-    #                 self.gps_y.append(round(float(lis[8]) * GPS2COOR, 1))
-    #                 self.status.append(int(lis[5]))
-
     def init_heatmap(self, bag_name, sig_g=2):
         """
         Plot heatmap of the signal
@@ -154,7 +144,7 @@ class VisualiseSignal(object):
         max_y = math.ceil(max(self.df_robot_gps["y"]))
         min_y = math.floor(min(self.df_robot_gps["y"]))
 
-        if max_y-min_y < 2 or max_x-min_x < 2:
+        if max_y - min_y < 2 or max_x - min_x < 2:
             print("Error: Seems robot is not moving: max_x = %d, min_x = %d" % (max_x, min_x))
             print("Error: Seems robot is not moving: max_y = %d, min_y = %d" % (max_y, min_y))
             exit(1)
@@ -221,7 +211,8 @@ class VisualiseCARV2(object):
     A class to visualise the Call_A_Robot device V2 collected from Hatchgate
     """
 
-    def __init__(self, user, data_path, data_name, start_time, time_end, df_gps_x, df_gps_y, fig, ax):
+    def __init__(self, env, user, data_path, data_name, start_time, time_end, df_gps_x, df_gps_y, fig=None, ax=None):
+        self.env = env
         self.user = user
         self.data_path = data_path
         self.data_name = data_name
@@ -235,7 +226,9 @@ class VisualiseCARV2(object):
         self.status = {}
         self.show_cbar = True
         self.invalid_gps = -1.0
-        self.gps_y_bound = 9999999999  # limit the V2 gps to the specified side when necessary
+        self.heat_value = {}
+        self.loop_time = 0.1
+        self.cbar_init = False
 
         self.display = True
 
@@ -246,8 +239,22 @@ class VisualiseCARV2(object):
         else:
             self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 8), sharex=False, sharey=False)
 
+        self.min_x, self.max_x, self.min_y, self.max_y = self.specify_bound()
         self.get_data()
-        self.plot_ht(self.user)
+        self.get_gps()
+        self.action = self.env.process(self.update_pos())
+
+    def specify_bound(self):
+        """
+        Specify the region of the GPS to be plotted
+        """
+        space = 200
+        robot_max_x = math.ceil(max(self.df_gps_x))
+        robot_min_x = math.floor(min(self.df_gps_x))
+        robot_max_y = math.ceil(max(self.df_gps_y))
+        robot_min_y = math.floor(min(self.df_gps_y))
+
+        return robot_min_x-space, robot_max_x+space, robot_min_y-space, robot_max_y+space
 
     def get_data(self):
         """read data from the log file"""
@@ -257,67 +264,70 @@ class VisualiseCARV2(object):
             except yaml.YAMLError as exc:
                 print(exc)
 
-    def plot_ht(self, user):
-        #TODO: seperate STD based on their names
+    def get_gps(self):
+        """
+        Read user GPS from log file
+        """
+        for user in self.user:
+            self.gps_x[user] = []
+            self.gps_y[user] = []
+            self.status[user] = []
+            self.heat_value[user] = None
 
-        data_status = {}
-        for u in user:
-            self.gps_x[u] = []
-            self.gps_y[u] = []
-            self.status[u] = []
-            data_status[u] = None
-        for line in self.data:
-            lis = line.split(",")
-            # if not lis[4] and self.time_start <= int(lis[1]) <= self.time_end \
-            #         and float(lis[7]) != self.invalid_gps and float(lis[8]) != self.invalid_gps and float(lis[8]) > 0:
-            #     if round(float(lis[8]) * GPS2COOR, 1) < self.gps_y_bound:
-            #         u = lis[3]
-            #         self.gps_x[u].append(round(float(lis[7]) * GPS2COOR, 1))
-            #         self.gps_y[u].append(round(float(lis[8]) * GPS2COOR, 1))
-            #         self.status[u].append(int(u[-2:]))
+            for line in self.data:
+                lis = line.split(",")
+                # read GPS from log, double check the GPS is valid
+                if not lis[4] \
+                        and self.time_start <= int(lis[1]) <= self.time_end \
+                        and float(lis[7]) != self.invalid_gps \
+                        and float(lis[8]) != self.invalid_gps \
+                        and float(lis[8]) < 0:
+                    # GPS filter, restrict to the Riseholme region
+                    if self.min_x < float(lis[7]) * GPS2COOR < self.max_x \
+                            and self.min_y < float(lis[8]) * GPS2COOR < self.max_y:
+                        # select the user
+                        if user == lis[3]:
+                            self.gps_x[user].append(round(float(lis[7]) * GPS2COOR, 1))
+                            self.gps_y[user].append(round(float(lis[8]) * GPS2COOR, 1))
+                            # use the last two digits of the PCD name as the heatmap value
+                            self.status[user].append(int(lis[3][-2:]))
 
-            # riseholme
-            if not lis[4] and self.time_start <= int(lis[1]) <= self.time_end \
-                    and float(lis[7]) != self.invalid_gps and float(lis[8]) != self.invalid_gps and float(lis[8]) < 0:
-                if round(float(lis[8]) * GPS2COOR, 1) < self.gps_y_bound:
-                    u = lis[3]
-                    self.gps_x[u].append(round(float(lis[7]) * GPS2COOR, 1))
-                    self.gps_y[u].append(round(float(lis[8]) * GPS2COOR, 1))
-                    self.status[u].append(int(u[-2:]))
+    def update_pos(self):
 
-        robot_max_x = math.ceil(max(self.df_gps_x))
-        robot_min_x = math.floor(min(self.df_gps_x))
-        robot_max_y = math.ceil(max(self.df_gps_y))
-        robot_min_y = math.floor(min(self.df_gps_y))
-
-        for u in self.user:
-            data_status[u] = np.zeros((robot_max_x - robot_min_x,
-                                       robot_max_y - robot_min_y))
-            for i, x in enumerate(self.gps_x[u]):
-                # if picker is outside of the area of robot, ignore
-                if int(math.ceil(x)) > robot_max_x:
+        for user in self.user:
+            self.heat_value[user] = np.zeros((self.max_x - self.min_x,
+                                               self.max_y - self.min_y))
+            for i, x in enumerate(self.gps_x[user]):
+                # ignore if PCD's GPS is outside of the specified region
+                if x > self.max_x or x < self.min_x:
                     continue
-                for j, y in enumerate(self.gps_y[u]):
+                for j, y in enumerate(self.gps_y[user]):
                     # if picker is outside of the area of robot, ignore
-                    if int(math.ceil(y)) > robot_max_y:
+                    if y > self.max_y or y < self.min_y:
                         continue
                     if i == j:
-                        data_status[u][int(math.ceil(x)) - robot_min_x - 1,
-                                       int(math.ceil(y)) - robot_min_y - 1] = self.status[u][i]
+                        self.heat_value[user][int(math.ceil(x)) - self.min_x - 1,
+                                               int(math.ceil(y)) - self.min_y - 1] = self.status[user][i]
+                        self.update_plot()
+                        yield self.env.timeout(self.loop_time)
                         break
 
-        df_ht = {}
-        for u in self.user:
-            df_ht[u] = pd.DataFrame(data_status[u],
-                                    index=np.linspace(robot_min_x,
-                                                      robot_max_x - 1,
-                                                      robot_max_x - robot_min_x,
-                                                      dtype='int'),
-                                    columns=np.linspace(robot_min_y,
-                                                        robot_max_y - 1,
-                                                        robot_max_y - robot_min_y,
-                                                        dtype='int'))
+        yield self.env.timeout(0.1)
 
+    def update_plot(self):
+        df_ht = dict()
+        for user in self.user:
+            df_ht[user] = pd.DataFrame(self.heat_value[user],
+                                       index=np.linspace(self.min_x,
+                                                         self.max_x - 1,
+                                                         self.max_x - self.min_x,
+                                                         dtype='int'),
+                                       columns=np.linspace(self.min_y,
+                                                           self.max_y - 1,
+                                                           self.max_y - self.min_y,
+                                                           dtype='int'))
+
+        # self.ax.clear()
         sea.set(font_scale=1.6)
 
         # red, blue, yellow
@@ -327,42 +337,48 @@ class VisualiseCARV2(object):
         if self.show_cbar:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
             # generate cbar only once
+
             self.ax = sea.heatmap(df_ht[self.user[0]], cmap=cmap, mask=(df_ht[self.user[0]] == 0), square=True,
                                   rasterized=True, cbar_kws={"shrink": 0.1})
             for u in self.user[1:]:
-                self.ax = sea.heatmap(df_ht[u], cmap=cmap, mask=(df_ht[u] == 0), square=True,
-                                      rasterized=True, cbar=False)
+                if not df_ht[u].isnull().values.any():
+                    self.ax = sea.heatmap(df_ht[u], cmap=cmap, mask=(df_ht[u] == 0), square=True,
+                                          rasterized=True, cbar=False)
             self.show_cbar = False
         else:
             # get sharp grid back by removing rasterized=True, and save fig as svg format
             for u in self.user:
-                self.ax = sea.heatmap(df_ht[u], cmap=cmap, mask=(df_ht[u] == 0), square=True,
-                                      rasterized=True, cbar=False)
+                if not df_ht[u].isnull().values.any():
+                    self.ax = sea.heatmap(df_ht[u], cmap=cmap, mask=(df_ht[u] == 0), square=True,
+                                          rasterized=True, cbar=False)
 
         self.ax.tick_params(colors='black', left=False, bottom=False)
 
         # Manually specify colorbar labelling after it's been generated
-        colorbar = self.ax.collections[0].colorbar
-        colorbar.set_ticks([72.75, 68.05, 63.25])
-        # user_idx = []
-        # for u in self.user:
-        #     user_idx.append(u[-2:])
-        tick_labels = ["Robot_024"] + self.user
-        colorbar.set_ticklabels(tick_labels)
-        plt.rcParams.update({'font.size': 16})
+        if not self.cbar_init:
+            colorbar = self.ax.collections[0].colorbar
+            if colorbar is not None:
+                colorbar.set_ticks([72.75, 63.25, 68.05])
 
-        # y axis upside down
-        self.ax.invert_yaxis()
+                tick_labels = ["Robot_024"] + self.user
+                colorbar.set_ticklabels(tick_labels)
+            plt.rcParams.update({'font.size': 16})
+            self.cbar_init = True
 
-        # set Axis label
-        self.ax.set_xlabel('Longitude (dm)', fontsize=16)
-        self.ax.set_ylabel('Latitude (dm)', fontsize=16)
+            # y axis upside down
+            self.ax.invert_yaxis()
 
-        self.fig.canvas.draw()
+            # set Axis label
+            self.ax.set_xlabel('Longitude (dm)', fontsize=16)
+            self.ax.set_ylabel('Latitude (dm)', fontsize=16)
 
         self.fig.tight_layout()
 
-        self.fig.savefig(self.data_path + "/figs/ROBOT_and_STDv2_GPS_Heatmap" + ".pdf")
+        self.fig.canvas.draw()
+
+        # self.fig.tight_layout()
+
+        # self.fig.savefig(self.data_path + "/figs/ROBOT_and_STDv2_GPS_Heatmap" + ".pdf")
 
         if self.display:
             plt.show()
