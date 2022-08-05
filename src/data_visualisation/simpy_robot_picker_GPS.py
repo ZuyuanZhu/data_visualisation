@@ -23,187 +23,7 @@ import math
 import simpy
 
 # parameter used to convert GPS to decimeter(1111390)/meters(111139)
-GPS2COOR = 1111390
-
-
-class VisualiseSignal(object):
-    """
-    A class to visualise the data for GPS
-    """
-
-    def __init__(self, data_path_, file_type_, bag_name, car_topic, robot_topic, fig=None, ax=None):
-        self.entries_list = None
-        self.data_path = data_path_
-        self.file_type = file_type_
-        self.bag_name = bag_name
-        self.INVALID_SIG = -999
-        self.sig_max = 0
-        self.sig_min = 0
-        self.display = False
-
-        self.df_robot_gps = dict(x=[], y=[])
-        self.df_car_gps = {}
-
-        self.heatmap_data = None
-        self.heatmap_index = None
-        self.heatmap_columns = None
-
-        self.car_topic = car_topic
-        self.robot_topic = robot_topic
-
-        self.time_start = 0  # Unix time
-        self.time_end = 0
-
-        self.show_cbar = False
-        if fig:
-            self.fig = fig
-        if ax:
-            self.ax = ax
-        else:
-            self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 9), sharex=False, sharey=False)
-
-        if not os.path.exists(self.data_path + '/' + self.bag_name):
-            self.merge_bag()
-
-    def plot(self, generations):
-        for g in generations:  # [2, 3, 4, 5]
-            if g < 4:
-                self.sig_max = 110
-                self.sig_min = 50
-            else:
-                self.sig_max = 0
-                self.sig_min = -20
-            self.init_heatmap(self.bag_name, g)
-
-    @staticmethod
-    def close_fig():
-        plt.close('all')
-
-    def merge_bag(self):
-        """
-        Merge individual bags into a single bag
-        """
-        topics = ''
-        total_included_count = 0
-        total_skipped_count = 0
-
-        self.get_folder_files()
-        with Bag(self.data_path + '/' + self.bag_name, 'w') as o:
-            for ifile in self.entries_list:
-                if self.file_type == ifile[-3:]:
-                    ifile = self.data_path + '/' + ifile
-                    # matchedtopics = []
-                    included_count = 0
-                    skipped_count = 0
-                    with Bag(ifile, 'r') as ib:
-                        for topic, msg, t in ib:
-                            # if any(fnmatchcase(topic, pattern) for pattern in topics):
-                            #     if topic not in matchedtopics:
-                            #         matchedtopics.append(topic)
-                            o.write(topic, msg, t)
-                            included_count += 1
-                            # else:
-                            #     skipped_count += 1
-                    total_included_count += included_count
-                    total_skipped_count += skipped_count
-
-    def get_folder_files(self):
-        entries_list = []
-        with os.scandir(self.data_path) as entries:
-            for entry in entries:
-                if entry.is_file():
-                    entries_list.append(entry.name)
-        entries_list.sort()
-        self.entries_list = entries_list
-
-    def init_heatmap(self, bag_name, sig_g=2):
-        """
-        Plot heatmap of the signal
-        """
-        b = bagreader(self.data_path + '/' + bag_name)
-        data_car_gps = b.message_by_topic(self.car_topic)
-        data_robot_gps = b.message_by_topic(self.robot_topic)
-        print("File saved: {}".format(data_robot_gps))
-        print("File saved: {}".format(data_car_gps))
-
-        # df_car_gps = pd.read_csv(data_car_gps)
-        df_robot_gps = pd.read_csv(data_robot_gps)
-        long_robot_diff = (max(df_robot_gps.longitude) - min(df_robot_gps.longitude)) * GPS2COOR
-        lat_robot_diff = (max(df_robot_gps.latitude) - min(df_robot_gps.latitude)) * GPS2COOR
-
-        self.df_robot_gps["x"] = []
-        self.df_robot_gps["y"] = []
-        self.df_car_gps = {}
-        # for idx in match_idx:
-        for idx in range(len(df_robot_gps.latitude)):
-            self.df_robot_gps["x"].append(round(df_robot_gps.latitude[idx] * GPS2COOR, 1))
-            self.df_robot_gps["y"].append(round(df_robot_gps.longitude[idx] * GPS2COOR, 1))
-
-        max_x = math.ceil(max(self.df_robot_gps["x"]))
-        min_x = math.floor(min(self.df_robot_gps["x"]))
-        max_y = math.ceil(max(self.df_robot_gps["y"]))
-        min_y = math.floor(min(self.df_robot_gps["y"]))
-
-        if max_y - min_y < 2 or max_x - min_x < 2:
-            print("Error: Seems robot is not moving: max_x = %d, min_x = %d" % (max_x, min_x))
-            print("Error: Seems robot is not moving: max_y = %d, min_y = %d" % (max_y, min_y))
-            exit(1)
-
-        data_sig2 = np.zeros((max_x - min_x,
-                              max_y - min_y))
-
-        # robot GPS
-        for i, x in enumerate(self.df_robot_gps["x"]):
-            for j, y in enumerate(self.df_robot_gps["y"]):
-                if i == j:
-                    data_sig2[int(math.ceil(x)) - min_x - 1, int(math.ceil(y)) - min_y - 1] = self.sig_max * 0.8
-                    break
-
-        df_ht = pd.DataFrame(data_sig2,
-                             index=np.linspace(min_x,
-                                               max_x - 1,
-                                               max_x - min_x,
-                                               dtype='int'),
-                             columns=np.linspace(min_y,
-                                                 max_y - 1,
-                                                 max_y - min_y,
-                                                 dtype='int'))
-
-        sea.set(font_scale=1.6)
-
-        if self.show_cbar:
-            # get sharp grid back by removing rasterized=True, and save fig as svg format
-            self.ax = sea.heatmap(df_ht, cbar=True, mask=(df_ht == 0), cmap='Reds',
-                                  vmin=self.sig_min, vmax=self.sig_max, square=True, rasterized=True)
-            self.show_cbar = True
-        else:
-            # get sharp grid back by removing rasterized=True, and save fig as svg format
-            self.ax = sea.heatmap(df_ht, cbar=False, mask=(df_ht == 0), cmap='Reds',
-                                  vmin=self.sig_min, vmax=self.sig_max, square=True, rasterized=True)
-
-        self.ax.tick_params(colors='black', left=False, bottom=False)
-
-        plt.rcParams.update({'font.size': 22})
-        self.ax.set(xlabel='Node pose x', ylabel='Node pose y')
-
-        # force background to white
-        # self.ax.set(facecolor="white")
-
-        # y axis upside down
-        self.ax.invert_yaxis()
-
-        # set Axis label
-        self.ax.set_xlabel('Longitude (dm)', fontsize=16)
-        self.ax.set_ylabel('Latitude (dm)', fontsize=16)
-
-        self.fig.canvas.draw()
-
-        self.fig.tight_layout()
-
-        self.fig.savefig(self.data_path + "/figs/robot_GPS_Heatmap" + ".pdf")
-
-        if self.display:
-            plt.show()
+GPS2COOR = 111139
 
 
 class VisualiseCARV2(object):
@@ -242,13 +62,14 @@ class VisualiseCARV2(object):
         self.min_x, self.max_x, self.min_y, self.max_y = self.specify_bound()
         self.get_data()
         self.get_gps()
+        self.fig.canvas.draw()
         self.action = self.env.process(self.update_pos())
 
     def specify_bound(self):
         """
         Specify the region of the GPS to be plotted
         """
-        space = 200
+        space = 0
         robot_max_x = math.ceil(max(self.df_gps_x))
         robot_min_x = math.floor(min(self.df_gps_x))
         robot_max_y = math.ceil(max(self.df_gps_y))
@@ -380,5 +201,5 @@ class VisualiseCARV2(object):
 
         # self.fig.savefig(self.data_path + "/figs/ROBOT_and_STDv2_GPS_Heatmap" + ".pdf")
 
-        if self.display:
-            plt.show()
+        # if self.display:
+        #     plt.show()

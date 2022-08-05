@@ -25,8 +25,10 @@ if __name__ == "__main__":
     start_time = 1659684214
     end_time = 1659694010
 
-    robot_gps_x = [59201857.3, 59202346.5]
-    robot_gps_y = [-582798.0, -582346.5]
+    # robot_gps_x = [59201857.3, 59202346.5]   # dm
+    # robot_gps_y = [-582798.0, -582346.5]
+    robot_gps_x = [5920185.7, 5920234.65]
+    robot_gps_y = [-58279.80, -58234.65]   # m
     user = ['STD_v2_bcddc2cfcb68', 'STD_v2_246f284a6c94']
 
     # env = simpy.RealtimeEnvironment(initial_time=0., factor=SIM_RT_FACTOR, strict=False)
